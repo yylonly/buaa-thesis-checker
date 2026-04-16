@@ -1,0 +1,7 @@
+# Ignore everything by default
+*
+
+# But track these folders and files
+!buaa-thesis-audit/
+!paper-content-audit/
+!README.md
