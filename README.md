@@ -2,6 +2,32 @@
 
 A collection of Claude Code skills for various tasks.
 
+## Installation
+
+Install skills using the `skills` CLI:
+
+```bash
+# Install a specific skill from GitHub
+npx skills add yylonly/buaa-thesis-checker
+
+# Install globally (available to all projects)
+npx skills add yylonly/buaa-thesis-checker --global
+
+# List all available skills in this repo
+npx skills add yylonly/buaa-thesis-checker --list
+
+# Remove a skill
+npx skills remove buaa-thesis-checker
+
+# Check for updates
+npx skills check
+
+# Update all skills
+npx skills update
+```
+
+For more commands, see `npx skills --help`.
+
 ## Available Skills
 
 ### buaa-thesis-format-checking
