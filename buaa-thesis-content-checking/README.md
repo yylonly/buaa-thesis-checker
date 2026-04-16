@@ -4,6 +4,20 @@ A Claude Code skill for auditing academic papers, evaluating main contributions,
 
 一个用于审核学术论文的Claude Code工具，主要贡献评估、方法创新性、实验评估以及与baseline的详细对比。
 
+## Installation / 安装
+
+Install using the `skills` CLI:
+
+```bash
+# Install globally (recommended)
+npx skills add yylonly/buaa-thesis-checker/buaa-thesis-content-checking --global
+
+# Or install locally in current project
+npx skills add yylonly/buaa-thesis-checker/buaa-thesis-content-checking
+```
+
+For more commands, see `npx skills --help`.
+
 ## Features / 功能特点
 
 | Feature | Description | 说明 |
@@ -14,17 +28,6 @@ A Claude Code skill for auditing academic papers, evaluating main contributions,
 | 实验完整性 | Verify experiment coverage | 验证实验完整性 |
 | 增量改进识别 | Distinguish novel vs incremental | 区分创新与增量改进 |
 | 多格式报告 | HTML/Markdown/bilingual reports | 多格式报告输出 |
-
-## Installation / 安装
-
-This is a Claude Code skill. Install it by placing the `paper-content-audit` folder in your Claude Code skills directory.
-
-这是Claude Code技能。将其放入Claude Code的skills目录即可使用。
-
-```bash
-# Clone or copy to your skills directory
-# 克隆或复制到skills目录
-```
 
 ## Quick Start / 快速开始
 

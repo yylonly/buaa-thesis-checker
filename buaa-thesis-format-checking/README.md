@@ -2,6 +2,20 @@
 
 北航硕士论文格式自动化检测工具，用于验证论文是否符合《北京航空航天大学学位论文书写规范与排版格式》。
 
+## Installation / 安装
+
+Install using the `skills` CLI:
+
+```bash
+# Install globally (recommended)
+npx skills add yylonly/buaa-thesis-checker/buaa-thesis-format-checking --global
+
+# Or install locally in current project
+npx skills add yylonly/buaa-thesis-checker/buaa-thesis-format-checking
+```
+
+For more commands, see `npx skills --help`.
+
 ## 功能特性
 
 | 检测项 | 类型 | 说明 |
