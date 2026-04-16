@@ -13,6 +13,10 @@ def check_blank_pages(content_by_page: List[Dict]) -> Dict:
     low_content_pages = []
 
     for content in content_by_page:
+        # 跳过标准格式页面："攻读硕士学位期间取得的研究成果 - 无"
+        if '攻读硕士学位期间取得的研究成果' in content['text']:
+            continue
+
         if content['chars'] == 0:
             blank_pages.append(content['page'])
         elif content['chars'] < 50:

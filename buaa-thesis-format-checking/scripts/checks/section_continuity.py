@@ -59,8 +59,13 @@ def check_section_continuity(content_by_page: List[Dict]) -> Dict:
                 cn_to_num = {'一': 1, '二': 2, '三': 3, '四': 4, '五': 5}
                 chapter_num = cn_to_num.get(chapter_num_str)
 
+                # 跳过目录页（页码3-15范围内，包含引导线"····"的是目录页）
+                page_num = content['page']
+                # 目录页特征：包含多个 · 字符（中日韩点）构成的引导线
+                is_toc_page = page_num <= 15 and text.count('·') >= 5
+
                 # 只记录第一次出现的章节页（忽略目录页的重复）
-                if chapter_num and chapter_num not in chapter_pages:
+                if chapter_num and chapter_num not in chapter_pages and not is_toc_page:
                     chapter_pages[chapter_num] = content['page']
                     sections.append({
                         'page': content['page'],
@@ -69,7 +74,7 @@ def check_section_continuity(content_by_page: List[Dict]) -> Dict:
                     })
                     # 找到就break，避免同一页重复检测
                     break
-                elif chapter_num:
+                elif chapter_num and not is_toc_page:
                     # 已记录过，但仍记录section
                     sections.append({
                         'page': content['page'],

@@ -4,13 +4,17 @@
 BUAA Master's Thesis Format Audit Script
 
 使用方法:
-    # 完整流程
-    python3 thesis_audit_script.py <pdf_path> [output_dir] [--type cn|en]
+    # 完整流程（使用Agent执行Step2和Step3）
+    python3 thesis_audit_script.py <pdf_path> [output_dir] --type cn|en --use-agent
 
-    # 分步执行
-    python3 thesis_audit_script.py --step1 <pdf_path> [output_dir]    # Step 1: 提取PDF文本
-    python3 thesis_audit_script.py --step2 <text_path> --type cn|en   # Step 2: 执行格式检测
-    python3 thesis_audit_script.py --step3 <results_path> <pdf_path>   # Step 3: 生成报告
+    # Step 1: 提取PDF文本（直接执行）
+    python3 thesis_audit_script.py --step1 <pdf_path> [output_dir]
+
+    # Step 2: Agent执行格式检测
+    python3 thesis_audit_script.py --step2 <text_path> --type cn|en --agent-mode
+
+    # Step 3: Agent生成报告
+    python3 thesis_audit_script.py --step3 <results_path> <pdf_path> --agent-mode
 """
 
 import sys
@@ -38,7 +42,7 @@ from checks import (
     check_fonts,
 )
 from checks.font_line_spacing import analyze_detailed_spacing
-from reports.generator import generate_html_report
+from reports.generator import generate_json_report, generate_html_report
 
 
 # 临时文件路径
@@ -142,7 +146,7 @@ def run_full_audit(pdf_path: str, thesis_type: str = "cn", output_dir: str = "."
     # 合并所有警告到问题列表
     all_issues.extend(all_warnings)
 
-    # 下方空白页面单独作为统计信息添加到 issues（详细信息在独立区域展示）
+    # 下方空白页面单独作为统计信息添加到 issues
     if bottom_blank_pages:
         all_issues.append(
             f"发现 {len(bottom_blank_pages)} 页可能存在下方空白 / Found {len(bottom_blank_pages)} pages possibly with blank space at bottom"
@@ -294,7 +298,7 @@ def run_step2(text_path: str, thesis_type: str = "cn") -> dict:
     all_warnings.extend(result.get('warnings', []))
     missing_transitions = result.get('result', {}).get('missing_transitions', [])
 
-    # 2.7 URL 位置
+    # 2.7 URL位置
     print("  [7/14] URL位置检测...")
     result = check_urls_in_body(content_by_page, total_pages)
     all_issues.extend(result.get('issues', []))
@@ -383,10 +387,10 @@ def run_step2(text_path: str, thesis_type: str = "cn") -> dict:
     return {'results_file': results_file_path, 'issue_count': len(all_issues), 'warning_count': len(all_warnings)}
 
 
-def run_step3(results_path: str, pdf_path: str = None, output_dir: str = ".") -> dict:
-    """Step 3: 从检测结果生成报告"""
+def run_step3_json(results_path: str, pdf_path: str = None, output_dir: str = ".") -> dict:
+    """Step 3: 生成JSON格式报告（用于审核）"""
     print("\n" + "=" * 60)
-    print("Step 3: 生成报告 / Generating Report")
+    print("Step 3: 生成JSON报告 / Generating JSON Report")
     print("=" * 60)
 
     # 从临时文件加载检测结果
@@ -406,27 +410,41 @@ def run_step3(results_path: str, pdf_path: str = None, output_dir: str = ".") ->
     font_info = results.get('font_info', {})
     detailed_spacing_info = results.get('detailed_spacing_info', {})
 
-    # 生成控制台报告
+    # 生成JSON报告
+    json_path = generate_json_report(
+        pdf_path, total_pages, average_chars,
+        all_issues,
+        bottom_blank_pages, alignment_issues, missing_transitions,
+        spacing_info, font_info, detailed_spacing_info, output_dir
+    )
+
+    print(f"\n✅ JSON报告已生成: {json_path}")
+
+    return {'json_path': json_path}
+
+
+def run_step3_html(results_path: str, pdf_path: str = None, output_dir: str = ".") -> dict:
+    """Step 5: 生成HTML格式报告（审核通过后）"""
     print("\n" + "=" * 60)
-    print("论文格式检测报告 / Thesis Format Audit Report")
+    print("Step 5: 生成HTML报告 / Generating HTML Report")
     print("=" * 60)
-    print(f"\nPDF 路径: {pdf_path}")
-    print(f"总页数: {total_pages}")
-    print(f"平均每页字符数: {average_chars:.1f}")
 
-    if all_issues:
-        print("\n\n" + "=" * 60)
-        print("❌ 问题项 / Issues Found:")
-        print("=" * 60)
-        for issue in all_issues:
-            print(f"  • {issue}")
+    # 从临时文件加载检测结果
+    with open(results_path, 'r', encoding='utf-8') as f:
+        results = json.load(f)
 
-    if not all_issues:
-        print("\n\n✅ 未发现格式问题")
+    if pdf_path is None:
+        pdf_path = results.get('pdf_path', 'unknown')
 
-    print("\n" + "=" * 60)
-    print("检测完成")
-    print("=" * 60)
+    total_pages = results.get('total_pages', 0)
+    average_chars = results.get('average_chars', 0)
+    all_issues = results.get('all_issues', [])
+    bottom_blank_pages = results.get('bottom_blank_pages', [])
+    alignment_issues = results.get('alignment_issues', [])
+    missing_transitions = results.get('missing_transitions', [])
+    spacing_info = results.get('spacing_info', {})
+    font_info = results.get('font_info', {})
+    detailed_spacing_info = results.get('detailed_spacing_info', {})
 
     # 生成HTML报告
     html_path = generate_html_report(
@@ -436,9 +454,14 @@ def run_step3(results_path: str, pdf_path: str = None, output_dir: str = ".") ->
         spacing_info, font_info, detailed_spacing_info, output_dir
     )
 
-    print(f"\n✅ 报告已生成: {html_path}")
+    print(f"\n✅ HTML报告已生成: {html_path}")
 
     return {'html_path': html_path}
+
+
+def run_step3(results_path: str, pdf_path: str = None, output_dir: str = ".") -> dict:
+    """Step 3: 从检测结果生成报告（默认生成JSON）"""
+    return run_step3_json(results_path, pdf_path, output_dir)
 
 
 def main():
@@ -457,6 +480,8 @@ def main():
         print("  --step1       - Step 1: 提取PDF文本到临时文件")
         print("  --step2       - Step 2: 从临时文件加载并执行格式检测")
         print("  --step3       - Step 3: 从检测结果生成报告")
+        print("  --use-agent   - 使用Agent执行Step2和Step3")
+        print("  --agent-mode  - Agent模式（由调用者设置）")
         print("  pdf_path      - 论文PDF文件路径")
         print("  text_path     - Step1生成的临时文本文件")
         print("  results_path  - Step2生成的检测结果文件")
@@ -536,8 +561,52 @@ def main():
             traceback.print_exc()
             sys.exit(1)
 
+    elif sys.argv[1] == "--step3-json":
+        # Step 3: 生成JSON报告
+        if len(sys.argv) < 3:
+            print("错误: --step3-json 需要指定结果文件路径")
+            sys.exit(1)
+        results_path = sys.argv[2]
+        pdf_path = sys.argv[3] if len(sys.argv) > 3 else None
+        output_dir = sys.argv[4] if len(sys.argv) > 4 else "."
+
+        try:
+            result = run_step3_json(results_path, pdf_path, output_dir)
+            print(f"\n✅ Step 3 完成!")
+            print(f"   JSON报告: {result['json_path']}")
+        except FileNotFoundError:
+            print(f"错误: 找不到文件 '{results_path}'")
+            sys.exit(1)
+        except Exception as e:
+            print(f"错误: {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
+    elif sys.argv[1] == "--step3-html":
+        # Step 5: 生成HTML报告（审核通过后）
+        if len(sys.argv) < 3:
+            print("错误: --step3-html 需要指定结果文件路径")
+            sys.exit(1)
+        results_path = sys.argv[2]
+        pdf_path = sys.argv[3] if len(sys.argv) > 3 else None
+        output_dir = sys.argv[4] if len(sys.argv) > 4 else "."
+
+        try:
+            result = run_step3_html(results_path, pdf_path, output_dir)
+            print(f"\n✅ Step 5 完成!")
+            print(f"   HTML报告: {result['html_path']}")
+        except FileNotFoundError:
+            print(f"错误: 找不到文件 '{results_path}'")
+            sys.exit(1)
+        except Exception as e:
+            print(f"错误: {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
     elif sys.argv[1] == "--step3":
-        # Step 3: 生成报告
+        # Step 3: 生成报告（默认JSON）
         if len(sys.argv) < 3:
             print("错误: --step3 需要指定结果文件路径")
             sys.exit(1)
@@ -546,9 +615,9 @@ def main():
         output_dir = sys.argv[4] if len(sys.argv) > 4 else "."
 
         try:
-            result = run_step3(results_path, pdf_path, output_dir)
+            result = run_step3_json(results_path, pdf_path, output_dir)
             print(f"\n✅ Step 3 完成!")
-            print(f"   报告: {result['html_path']}")
+            print(f"   JSON报告: {result['json_path']}")
         except FileNotFoundError:
             print(f"错误: 找不到文件 '{results_path}'")
             sys.exit(1)
@@ -564,6 +633,7 @@ def main():
         pdf_path = None
         output_dir = "."
         thesis_type = "cn"
+        use_agent = False
 
         i = 1
         while i < len(sys.argv):
@@ -577,6 +647,12 @@ def main():
                 else:
                     print("错误: --type 需要一个值 (cn 或 en)")
                     sys.exit(1)
+            elif sys.argv[i] == "--use-agent":
+                use_agent = True
+                i += 1
+            elif sys.argv[i] == "--agent-mode":
+                # Agent模式标志，忽略（由调用者设置）
+                i += 1
             elif sys.argv[i].startswith("-"):
                 print(f"错误: 未知参数 '{sys.argv[i]}'")
                 sys.exit(1)
@@ -593,6 +669,12 @@ def main():
 
         thesis_type_name = "中文论文" if thesis_type == "cn" else "English Thesis"
         print(f"\n论文类型 / Thesis Type: {thesis_type_name}")
+
+        if use_agent:
+            print("\n⚠️  使用Agent模式需要通过Claude Code Agent调用")
+            print("   请使用 Agent 工具调用本脚本")
+            print(f"   提示: python3 thesis_audit_script.py --step1 {pdf_path} [output_dir]")
+            sys.exit(1)
 
         try:
             result = run_full_audit(pdf_path, thesis_type, output_dir)

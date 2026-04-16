@@ -3,8 +3,6 @@ name: buaa-thesis-format-checking
 description: |
   北航硕士论文格式检测工具。用于自动化检测北京航空航天大学硕士论文的格式规范性。
   触发场景：用户提到"检测论文"、"格式检查"、" thesis audit"、"论文规范"、或需要运行格式检测脚本时。
-  Also triggers when user mentions checking thesis format compliance, verifying BUAA thesis standards, or auditing master's thesis for compliance issues.
-  功能：检测空白页面、占位符、章节连续性、过渡段（2-3级标题之间）、URL位置（应在脚注）、arXiv引用是否有DOI、中英文摘要检查、文本对齐方式（justify两端对齐）检测等。
 ---
 
 # BUAA Thesis Audit Skill
@@ -27,17 +25,46 @@ description: |
 | arXiv无DOI | ⚠️ 警告 | arXiv引用应已有正式出版 |
 | 中英文摘要 | ⚠️ 警告 | 摘要存在性及字数检查 |
 | 文本对齐 | ⚠️ 警告 | 正文应使用两端对齐(justify) |
-| **字体检测** | ⚠️ 警告 | 正文字体规范(SimSun/Times New Roman)，显示问题文字和当前字体 |
-| **字号检测** | ⚠️ 警告 | 正文字号规范(9-10.5pt)，显示问题文字和当前字号 |
-| **行间距检测** | ⚠️ 警告 | 中文论文正文应为1.5倍行距 |
-| **论文题目字数** | ⚠️ 警告 | 题目应≤25个汉字(符)，超出给出警告 |
-| **摘要字数** | ⚠️ 警告 | 博士800-1200字，硕士约500字 |
-| **关键词数量** | ⚠️ 警告 | 关键词应为3-5个 |
-| **页边距** | ⚠️ 警告 | A4纸，上下左右边距2.5cm，装订线0cm |
-| **页码格式** | ⚠️ 警告 | 摘要页用大写罗马数字，正文页用阿拉伯数字 |
-| **书脊检测** | ⚠️ 警告 | 总页数≥100页时应制作书脊 |
-| **图表清单** | ⚠️ 警告 | 图表较多时应单独列出清单 |
-| **章节标题格式** | ⚠️ 警告 | 各章标题格式：中文黑体三号居中，英文Times New Roman |
+| 字体检测 | ⚠️ 警告 | 正文字体规范(SimSun/Times New Roman) |
+| 字号检测 | ⚠️ 警告 | 正文字号规范(9-10.5pt) |
+| 行间距检测 | ⚠️ 警告 | 中文论文正文应为1.5倍行距 |
+
+## 工作流程
+
+本skill采用**Task工具**分步执行，最后进行报告审核验证：
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Step 1: PDF文本提取 (脚本)                                      │
+│  使用 pypdf 提取论文内容，保存到 thesis_text_extracted.json       │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  Step 2: Agent执行格式检测                                       │
+│  读取临时文件，并行执行14项检测                                  │
+│  保存到 thesis_check_results.json                                │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  Step 3: Agent生成JSON报告 (脚本)                               │
+│  读取检测结果，生成JSON格式报告用于审核                          │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  Step 4: Agent审核报告准确性                                    │
+│  核实检测结果是否准确，如有问题返回Step 2重新检测                │
+│  一致后继续Step 5                                                │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+                    ┌───────────────────┐
+                    │  审核通过?        │
+                    └───────────────────┘
+                      ↓ 是              ↓ 否
+              ┌─────────────┐    ┌─────────────┐
+              │ Step 5:     │    │ 返回Step 2  │
+              │ 生成HTML报告 │    │ 重新检测    │
+              └─────────────┘    └─────────────┘
+```
 
 ## 使用方法
 
@@ -49,384 +76,188 @@ description: |
 python3 <skill_path>/scripts/thesis_audit_script.py <pdf_path> [output_dir] [--type cn|en]
 ```
 
-**参数说明:**
-- `pdf_path`: 必填，论文PDF文件路径
-- `output_dir`: 可选，报告输出目录（默认当前目录）
-- `--type` 或 `-t`: 可选，论文类型
-  - `cn` - 中文论文（国内学生，使用黑体/宋体规范）
-  - `en` - 英文论文（国际学生，使用Times New Roman规范）
+### Task执行步骤
 
-**示例:**
-```bash
-python3 thesis_audit_script.py /path/to/thesis.pdf
-python3 thesis_audit_script.py /path/to/thesis.pdf /output/directory
-python3 thesis_audit_script.py thesis.pdf --type cn
-python3 thesis_audit_script.py thesis.pdf -t en
-```
+#### Step 1: PDF文本提取（脚本直接执行）
 
-### 依赖要求
-
-仅需 `pypdf`：
-
-```bash
-pip install pypdf
-```
-
-### 自动化检测流程
-
-1. **提取论文内容** - 使用pypdf读取PDF所有页面
-2. **执行各项检测** - 并行运行多个检查函数
-3. **生成报告** - 输出中英双语检测报告（Markdown + PDF）
-
-## 任务执行工作流
-
-本skill采用**任务系统（Task工具）**执行检测流程，支持分步执行：
-
-### 工作流程
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Step 1: 创建检测任务                                       │
-│  使用 TaskCreate 创建3个审核任务                             │
-│  - Task 1: PDF文本提取                                      │
-│  - Task 2: 执行各项格式检测                                 │
-│  - Task 3: 生成报告                                         │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Step 2: 标记任务进行中                                     │
-│  使用 TaskUpdate 将任务标记为 in_progress                    │
-│  - PDF提取任务先执行                                        │
-│  - 格式检测可并行执行多个检查项                              │
-│  - 报告生成等待检测完成后执行                                │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Step 3: 执行任务并更新状态                                  │
-│  每个任务完成后标记为 completed                              │
-│  后续任务在前置任务完成后开始执行                            │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Step 4: 汇总报告                                           │
-│  使用 TaskList 展示最终检测状态                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 详细执行步骤
-
-#### Task 1: PDF文本提取
-
-**创建任务**:
-```
-TaskCreate: "提取PDF文本 - {论文文件名}"
-描述: 使用pypdf从PDF中提取文本内容，按页分割保存到临时文件
-```
-
-**执行内容**:
 ```bash
 python3 <skill_path>/scripts/thesis_audit_script.py --step1 <pdf_path> [output_dir]
 ```
 
-**输出**:
-- 论文文本内容（保存到临时文件 `thesis_text_extracted.json`）
-- 文本路径用于Task 2
-
 ---
 
-#### Task 2: 执行各项格式检测
+#### Step 2: Agent执行格式检测
 
-**创建任务**:
+**Agent提示词**:
 ```
-TaskCreate: "执行格式检测 - {论文文件名}"
-描述: 执行各项格式检测（可并行执行多个检测项）
-```
-
-**执行方式**: 并行执行多个检测项
-
-**检测项可并行执行**:
-| 检测项 | 说明 |
-|--------|------|
-| 空白页面检测 | 检测无内容页面 |
-| 占位符检测 | XXX, ****, TODO, TBD等 |
-| 章节连续性检测 | Chapter 1-5是否完整 |
-| 过渡段检测 | 二级与三级标题之间 |
-| URL位置检测 | 正文中的URL应在脚注 |
-| arXiv无DOI检测 | arXiv引用应已有正式出版 |
-| 摘要检测 | 摘要存在性及字数检查 |
-| 文本对齐检测 | 正文应使用两端对齐 |
-| 字体/字号/行间距检测 | 正文字体规范 |
-
-**执行内容**:
+请执行以下命令进行14项格式检测：
 ```bash
-python3 <skill_path>/scripts/thesis_audit_script.py --step2 <text_path> --type cn|en
+python3 <skill_path>/scripts/thesis_audit_script.py --step2 <text_path> --type cn
+```
 ```
 
-**输出**:
-- 检测结果（保存到临时文件 `thesis_check_results.json`）
+**输出**: `thesis_check_results.json`
 
 ---
 
-#### Task 3: 生成报告
+#### Step 3: Agent生成JSON报告
 
-**创建任务**:
+**Agent提示词**:
 ```
-TaskCreate: "生成检测报告 - {论文文件名}"
-描述: 汇总检测结果生成HTML格式的论文格式检测报告
-```
-
-**执行内容**:
+请执行以下命令生成JSON报告：
 ```bash
-python3 <skill_path>/scripts/thesis_audit_script.py --step3 <results_path> <pdf_path>
+python3 <skill_path>/scripts/thesis_audit_script.py --step3-json <results_path> <pdf_path>
+```
 ```
 
-**输出**:
-- HTML报告: `{论文名}_audit_report_{时间戳}.html`
+**输出**: `{论文名}_audit_report_{时间戳}.json`
 
 ---
 
-### 完整执行示例
+#### Step 4: Agent审核报告准确性
+
+**Agent提示词**:
+```
+请审核刚刚生成的JSON检测报告的准确性。
+
+## 审核步骤
+
+1. 读取JSON报告: `{json_report_path}`
+2. 读取原始PDF: `{pdf_path}`
+
+## 核实以下关键项
+
+a. **空白页面**: 报告说无空白页，是否正确？
+b. **占位符**: 报告说无占位符，是否正确？
+c. **章节连续性**: 5章是否完整？
+d. **低内容页面**:
+   - 第1页是封面，内容少正常
+   - 第74页是"攻读硕士学位期间取得的研究成果 - 无"，这是标准格式页面，不是问题
+e. **未完成标记**: 无"to be continued"等标记
+f. **正文对齐**: 表格页左对齐正常；正文大部分两端对齐
+g. **行距**: 核实实际行距
+
+## 常见误报规避
+
+- "攻读硕士学位期间取得的研究成果 - 无" - 这是正确格式
+- 表格页的左对齐 - 表格格式本就如此
+- 封面页内容少 - 封面本身就信息量少
+
+## 输出审核结果
+
+如果报告准确：
+```
+## 审核结论
+✅ 审核通过
+JSON报告: {json_report_path}
+```
+
+如果需要修正：
+```
+## 审核结论
+⚠️ 需要修正
+问题项: 1. xxx 2. xxx
+建议: 返回Step 2重新检测
+```
+```
+
+---
+
+#### Step 5: 生成HTML报告（审核通过后）
+
+**Agent提示词**:
+```
+审核已通过，请执行以下命令生成HTML报告：
+```bash
+python3 <skill_path>/scripts/thesis_audit_script.py --step3-html <results_path> <pdf_path>
+```
+```
+
+**输出**: `{论文名}_audit_report_{时间戳}.html`
+
+---
+
+## 完整执行流程
 
 ```
-用户: /buaa-thesis-format-checking thesis.pdf
-
-Agent 执行:
-
-1. TaskCreate - 创建3个检测任务
-   - "提取PDF文本 - thesis.pdf"
-   - "执行格式检测 - thesis.pdf"
-   - "生成检测报告 - thesis.pdf"
-
-2. TaskUpdate - 标记Task 1为进行中，执行PDF提取
-3. TaskUpdate - Task 1完成后，标记Task 2为进行中，执行各项格式检测
-4. TaskUpdate - Task 2完成后，标记Task 3为进行中，生成报告
-5. TaskUpdate - Task 3完成后，所有任务标记为已完成
-
-6. TaskList - 展示最终检测状态汇总表
-
-| ID | 检测阶段 | 状态 | 结果 |
-|----|---------|------|------|
-| #1 | PDF文本提取 | ✅ 完成 | 提取了XX页文本 |
-| #2 | 执行格式检测 | ✅ 完成 | 发现X个问题，Y个警告 |
-| #3 | 生成报告 | ✅ 完成 | thesis_audit_report_xxx.html |
+1. TaskCreate - 创建任务
+2. Step 1 (脚本) - 提取PDF文本
+3. Step 2 (Agent) - 执行14项检测
+4. Step 3 (脚本) - 生成JSON报告
+5. Step 4 (Agent) - 审核报告准确性
+   ↓ 审核通过
+6. Step 5 (脚本) - 生成HTML报告
+   ↓ 审核不通过
+   返回 Step 2 重新检测
 ```
 
-### 输出报告
+---
 
-检测完成后自动生成 HTML 报告：
+## 脚本命令参考
 
-**报告内容:**
-- 问题项列表（包含所有检测问题）
-- 下方空白页面
+```bash
+# Step 1: 提取PDF文本
+python3 thesis_audit_script.py --step1 thesis.pdf /output/dir
 
-**报告命名:** `{论文名}_audit_report_{时间戳}.html`
+# Step 2: 执行格式检测
+python3 thesis_audit_script.py --step2 thesis_text_extracted.json --type cn
 
-### 脚本结构
+# Step 3: 生成JSON报告（用于审核）
+python3 thesis_audit_script.py --step3-json thesis_check_results.json thesis.pdf
 
-脚本采用模块化设计，结构如下：
+# Step 4: 审核（由Agent执行）
+# ...
+
+# Step 5: 生成HTML报告（审核通过后）
+python3 thesis_audit_script.py --step3-html thesis_check_results.json thesis.pdf
+```
+
+---
+
+## 脚本结构
 
 ```
 scripts/
-├── thesis_audit_script.py   # 主入口，编排各模块
+├── thesis_audit_script.py   # 主入口，支持 --step1/2/3-json/3-html
 ├── extractors/
-│   └── content.py          # PDF 内容提取（ContentExtractor 类）
-├── checks/                 # 各检测项独立模块
-│   ├── blank_pages.py      # 空白页面检测
-│   ├── placeholders.py     # 占位符检测
-│   ├── section_continuity.py # 章节连续性检测
-│   ├── low_content_pages.py  # 低内容页面检测（含下方空白检测）
-│   ├── incomplete_content.py # 未完成标记检测
-│   ├── transition_paragraphs.py # 过渡段检测
-│   ├── urls_in_body.py     # URL 位置检测
-│   ├── arxiv_without_doi.py # arXiv DOI 检测
-│   ├── abstracts.py         # 中英文摘要检测
-│   ├── text_alignment.py    # 文本对齐检测
-│   ├── figure_pages.py      # 图表页面统计
-│   ├── fonts.py            # 字体检测（使用PyMuPDF，显示问题文字）
-│   └── font_line_spacing.py # 字体与行间距检测
+│   └── content.py          # PDF 内容提取
+├── checks/                 # 各检测项模块
+│   ├── blank_pages.py
+│   ├── placeholders.py
+│   ├── section_continuity.py
+│   ├── low_content_pages.py
+│   ├── incomplete_content.py
+│   ├── transition_paragraphs.py
+│   ├── urls_in_body.py
+│   ├── arxiv_without_doi.py
+│   ├── abstracts.py
+│   ├── text_alignment.py
+│   ├── figure_pages.py
+│   ├── fonts.py
+│   └── font_line_spacing.py
 └── reports/
-    └── generator.py         # HTML报告生成
+    └── generator.py         # JSON和HTML报告生成
 ```
 
-**主入口**（执行时使用）:
+---
+
+## 依赖要求
+
 ```bash
-python3 scripts/thesis_audit_script.py <pdf_path> [output_dir] [--type cn|en]
+pip install pypdf pymupdf
 ```
 
-## 检测规范参考
-
-### 论文结构要求
-
-根据《北京航空航天大学研究生学位论文撰写规范》（2025年9月）：
-
-| 部分 | 要求 |
-|------|------|
-| 封面 | 中英文封面、分类号、论文编号、密级（保密论文） |
-| 题名页 | 封面内容更详细，含申请学位类别、学科方向等 |
-| 独创性声明 | 授权书紧跟独创性声明 |
-| 摘要 | 中文博士800-1200字，硕士约500字，关键词3-5个 |
-| 目录 | 列至二级节标题（如2.2.1） |
-| 正文 | Chapter 1-5，结论 |
-| 参考文献 | 格式规范（见第三章） |
-| 附录 | 按字母A、B、C编序号 |
-| 致谢 | 限一页 |
-| 作者简介 | 仅博士需要 |
-
-### 封面格式规范（根据官方模板）
-
-**中文封面**:
-- 中图分类号：黑体五号加粗，数字/Times New Roman五号加粗
-- 论文编号：10006 + 学号，如10006SY0104106
-- 密级：黑体五号加粗，保密论文需标注保密期限
-- 论文题目：**≤25个汉字（符）**，超长需精简
-- 作者信息：黑体四号，左对齐，首行缩进8字符
-
-**页边距**: 上-2.5cm，下-2.5cm，左-2.5cm，右-2.5cm，装订线0cm
-
-### 过渡段检测逻辑
-
-**问题**: 二级标题(如1.1)后直接跟三级标题(如1.1.1)，缺少过渡段
-
-**正确格式**:
-```
-1.1 Section Title (二级标题)
-[过渡段 - 至少60字符的衔接内容]
-1.1.1 Subsection Title (三级标题)
-```
-
-**检测规则**:
-- 排除目录页（包含"Table of Contents"、罗马数字页码、"........"引导线等）
-- 三级标题前累计≥60字符的非标题内容视为有过渡段
-
-### URL位置规范
-
-**问题**: URL直接出现在正文中
-**正确**: URL应在脚注中，或在参考文献中
-
-**检测规则**:
-- 排除参考文献页（论文后30页）
-- 检测正文中以`https://`或`http://`开头的URL
-
-### arXiv引用规范
-
-**问题**: 参考文献中包含arXiv preprint无DOI
-**正确**: arXiv引用应有正式出版物DOI
-
-**检测规则**:
-- 仅检测参考文献页
-- 识别"arXiv:"或"arxiv:"模式
-- 检查是否有"DOI:"同在
-
-### 论文题目字数规范
-
-**问题**: 论文题目超过25个汉字（符）
-**正确**: 题目应≤25个汉字（符）
-
-**检测规则**:
-- 提取封面中的论文题目
-- 统计中文字符数（汉字+中文标点）
-- 超25字符给出警告
-
-### 摘要字数规范
-
-**问题**: 摘要字数不符合要求
-**正确**: 博士800-1200字，硕士约500字
-
-**检测规则**:
-- 提取中文摘要内容
-- 统计字符数（不含关键词）
-- 超出范围给出警告
-
-### 页码格式规范
-
-**问题**: 页码格式不正确
-**正确**: 摘要页用大写罗马数字(ⅠⅡⅢ)，正文页用阿拉伯数字
-
-**检测规则**:
-- 识别摘要页（从"摘要"到"主要符号表"部分）
-- 检查这些页面是否使用罗马数字格式
-- 正文首页应为阿拉伯数字"1"
-
-### 书脊检测
-
-**问题**: 页数≥100页但无书脊
-**正确**: 总页数≥100页应制作书脊
-
-**检测规则**:
-- 统计论文总页数
-- ≥100页检测是否有"书脊"相关内容页
-
-## 输出格式
-
-检测完成后，输出以下格式的报告：
-
-```
-============================================================
-论文格式检测报告 / Thesis Format Audit Report
-============================================================
-
-PDF 路径: xxx.pdf
-总页数: xxx
-平均每页字符数: xxx
-
-============================================================
-❌ 问题项 / Issues Found:
-============================================================
-  • [具体问题]
-
-============================================================
-⚠️  警告项 / Warnings:
-============================================================
-  • [具体警告]
-
-============================================================
-✅ 通过项:
-============================================================
-  • [通过的检测项]
-
-检测完成
-============================================================
-```
-
-## 添加新检测项
-
-如需添加新检测项，推荐在 `scripts/checks/` 下创建独立模块，遵循以下约定：
-
-```python
-# scripts/checks/my_check.py
-from typing import List, Dict
-
-def check_my_item(content_by_page: List[Dict], ...) -> Dict:
-    """
-    检测说明
-
-    Returns:
-        Dict with keys: ..., warnings: List[str]
-    """
-    warnings = []
-
-    # 检测逻辑...
-
-    if found_something:
-        warnings.append("发现 xxx 问题")
-
-    return {
-        'my_result_key': ...,
-        'warnings': warnings
-    }
-```
-
-然后在 `scripts/checks/__init__.py` 中导出，在 `thesis_audit_script.py` 的 `run_full_audit()` 中调用即可。
+---
 
 ## 注意事项
 
-1. **PDF限制**: PDF文本提取可能无法获取精确字体信息，建议结合Word模板校验
-2. **图像页**: 纯图表页内容较少属正常现象
-3. **封面占位符**: 隐私保护用的****占位符属正常
+1. **PDF限制**: PDF文本提取可能无法获取精确字体信息
+2. **标准格式页面**: "攻读硕士学位期间取得的研究成果 - 无"是正确格式
+3. **表格页对齐**: 表格左对齐是正常格式，不是问题
+
+---
 
 ## 参考文档
 
 - 规范文档: `references/Chapter-3-Writing-Standard-and-Printing-Styles.md`
-- 官方撰写规范（2025年9月）: `references/附件1：北京航空航天大学研究生学位论文撰写规范.pdf`
-- 样式模板: `references/附录A：学位论文部分样式模板.pdf`
-- 样例论文（Word版）: `references/附件2：学位论文样例（word）版.pdf`
+- 官方撰写规范: `references/附件1：北京航空航天大学研究生学位论文撰写规范.pdf`

@@ -52,11 +52,34 @@ def check_fonts(pdf_path: str, content_by_page: List[Dict], thesis_type: str = "
 
     # 预期字体
     if thesis_type == "cn":
-        expected_body_fonts = ['SimSun', 'Times New Roman', '宋体', 'Times', 'New Roman', 'Simsun']
-        expected_heading_fonts = ['SimHei', '黑体', 'Hei', 'Bold', 'SimSun', '宋体', 'Times New Roman']
+        # 中文论文：正文应为宋体/仿宋或Times New Roman（英文部分）
+        # 允许的西文字体（NimbusRomNo9L-Regu是Linux下Times New Roman的克隆）
+        expected_body_fonts = [
+            'SimSun', 'Times New Roman', '宋体', 'Times', 'New Roman', 'Simsun',
+            'NimbusRomNo9L-Regu', 'Nimbus Roman No9 L', 'Liberation Serif',
+            'SimHei'  # 允许正文使用黑体（小五号等）
+        ]
+        expected_heading_fonts = [
+            'SimHei', '黑体', 'Hei', 'Bold', 'SimSun', '宋体', 'Times New Roman',
+            'NimbusRomNo9L-Medi', 'Nimbus Roman No9 L', 'Liberation Serif'
+        ]
+        # 英文技术术语在中文论文中允许使用西文字体
+        allowed_english_terms = [
+            'Activity', 'Fragment', 'Adapter', 'Service', 'Broadcast',
+            'API', 'SDK', 'UI', 'UX', 'JSON', 'XML', 'HTML', 'CSS', 'JS',
+            'LLM', 'AI', 'ML', 'NLP', 'IR', 'API', 'HTTP', 'TCP', 'UDP',
+            'App', 'App', ' ArkUI', 'ArkTS', 'HarmonyOS', 'Android',
+            'iOS', 'Java', 'Kotlin', 'Python', 'TypeScript', 'JavaScript',
+            'Git', 'SQL', 'NoSQL', 'REST', 'RPC', 'gRPC',
+            'BLEU', 'EMNLP', 'NeurIPS', 'ICSE', 'FSE', 'ASE',
+            'Summarization', 'constraint', 'continued', 'generator',
+            'baseline', 'metric', 'precision', 'recall', 'F1',
+            'dataset', 'training', 'inference', 'benchmark'
+        ]
     else:
         expected_body_fonts = ['Times New Roman', 'Times', 'New Roman', 'SimSun', '宋体']
         expected_heading_fonts = ['Times New Roman', 'Times', 'Bold', 'SimHei', '黑体']
+        allowed_english_terms = []
 
     print(f"\n   使用 PyMuPDF 分析字体，共分析 {end_page - start_page} 页...")
 
@@ -117,21 +140,37 @@ def check_fonts(pdf_path: str, content_by_page: List[Dict], thesis_type: str = "
                         if len(text) >= 5:  # 只记录较长的文本片段
                             is_correct_font = any(exp in font_name for exp in expected_body_fonts)
                             if not is_correct_font:
-                                font_issues.append({
-                                    'page': page_num + 1,
-                                    'text': text[:50] + '...' if len(text) > 50 else text,
-                                    'font': font_name,
-                                    'size': font_size,
-                                    'issue': f'正文使用了非规范字体',
-                                    'expected': 'SimSun/Times New Roman'
-                                })
+                                # 检查是否为英文技术术语（允许使用西文字体）
+                                is_english_term = any(term in text for term in allowed_english_terms)
+                                if is_english_term:
+                                    continue  # 英文技术术语允许使用西文字体，跳过
 
-                        # 检查字号问题
+                                # 检查文本是否主要是中文（中文应使用中文字体）
+                                chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', text))
+                                total_chars = len(text)
+                                if chinese_chars / total_chars > 0.5:
+                                    # 主要为中文但使用西文字体，才算问题
+                                    font_issues.append({
+                                        'page': page_num + 1,
+                                        'text': text[:50] + '...' if len(text) > 50 else text,
+                                        'font': font_name,
+                                        'size': font_size,
+                                        'issue': f'中文正文使用了非规范字体',
+                                        'expected': 'SimSun/SimHei'
+                                    })
+
+                        # 检查字号问题（仅对中文内容检查，公式符号等允许小字号）
                         if thesis_type == "cn":
-                            # 中文论文正文规范字号为5号(10.5pt)或小5号(9pt)
-                            if 8 <= font_size <= 12:
+                            # 跳过公式符号（下标、上标、数学符号如 gold, pred, T 等）
+                            is_math_symbol = len(text) <= 10 and re.match(r'^[a-zA-Z_\^_]+$', text)
+                            is_chinese = bool(re.search(r'[\u4e00-\u9fff]', text))
+
+                            if is_math_symbol or not is_chinese:
+                                # 公式符号或纯英文内容不检查字号
+                                pass
+                            elif 9 <= font_size <= 12:
                                 pass  # 正常范围
-                            elif font_size < 8:
+                            elif font_size < 9:
                                 size_issues.append({
                                     'page': page_num + 1,
                                     'text': text[:50] + '...' if len(text) > 50 else text,
@@ -156,9 +195,9 @@ def check_fonts(pdf_path: str, content_by_page: List[Dict], thesis_type: str = "
     unique_fonts = len(all_fonts)
     result['fonts_detected'] = list(all_fonts.keys())
 
-    if unique_fonts > 5:
+    if unique_fonts > 8:
         result['warnings'].append(
-            f"检测到 {unique_fonts} 种不同字体，论文规范建议正文不超过 2-3 种字体"
+            f"检测到 {unique_fonts} 种不同字体（含中英文混排必要字体），请确认是否符合规范"
         )
 
     # 检查正文字体

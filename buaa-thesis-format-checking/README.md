@@ -2,26 +2,12 @@
 
 北航硕士论文格式自动化检测工具，用于验证论文是否符合《北京航空航天大学学位论文书写规范与排版格式》。
 
-## Installation / 安装
-
-Install using the `skills` CLI:
-
-```bash
-# Install globally (recommended)
-npx skills add yylonly/buaa-thesis-checker/buaa-thesis-format-checking --global
-
-# Or install locally in current project
-npx skills add yylonly/buaa-thesis-checker/buaa-thesis-format-checking
-```
-
-For more commands, see `npx skills --help`.
-
 ## 功能特性
 
 | 检测项 | 类型 | 说明 |
 |--------|------|------|
 | 空白页面 | ⚠️ 警告 | 检测无内容页面 |
-| 占位符 | ⚠️ 警告 | XXX, \*\*\*\*, TODO, TBD 等 |
+| 占位符 | ⚠️ 警告 | XXX, ****, TODO, TBD 等 |
 | 章节连续性 | ✅/❌ | Chapter 1-5 是否完整 |
 | 低内容页面 | ⚠️ 警告 | 内容 < 20% 平均值的页面 |
 | 未完成标记 | ⚠️ 警告 | "to be continued" 等 |
@@ -37,25 +23,24 @@ For more commands, see `npx skills --help`.
 ## 安装依赖
 
 ```bash
-pip install pypdf
+# 核心依赖 - PDF文本提取（使用 PDFMiner.six，精度更高）
+pip install pdfminer.six
+
 # 字体检测和详细间距分析（推荐）
 pip install pymupdf
-# PDF 报告生成（可选）
-pip install weasyprint        # 推荐，中文支持最好
-# 或
-pip install reportlab        # 备选
-```
-
-macOS Homebrew Python 可能需要额外标志：
-
-```bash
-pip install --break-system-packages weasyprint
 ```
 
 ## 快速开始
 
 ```bash
-python3 scripts/thesis_audit_script.py <pdf_path> [output_dir] [--type cn|en]
+# 完整流程（Step 1-5）
+python3 scripts/thesis_audit_script.py <pdf_path> [output_dir] --type cn|en
+
+# 分步执行
+python3 scripts/thesis_audit_script.py --step1 <pdf_path> [output_dir]   # 提取PDF文本
+python3 scripts/thesis_audit_script.py --step2 <text_path> --type cn|en   # 执行格式检测
+python3 scripts/thesis_audit_script.py --step3-json <results_path> <pdf>  # 生成JSON报告
+python3 scripts/thesis_audit_script.py --step3-html <results_path> <pdf>  # 生成HTML报告
 ```
 
 **参数：**
@@ -66,30 +51,49 @@ python3 scripts/thesis_audit_script.py <pdf_path> [output_dir] [--type cn|en]
 | `output_dir` | ❌ | 报告输出目录（默认当前目录） |
 | `--type` / `-t` | ❌ | `cn` 中文论文，`en` 英文论文 |
 
-**示例：**
+## 5步检测流程
 
-```bash
-# 中文论文
-python3 scripts/thesis_audit_script.py thesis.pdf --type cn
+本工具采用 5 步检测流程，Step 2 和 Step 4 可使用 Agent 并行执行：
 
-# 英文论文
-python3 scripts/thesis_audit_script.py thesis.pdf -t en
-
-# 指定输出目录
-python3 scripts/thesis_audit_script.py thesis.pdf ./output --type cn
+```
+┌─────────────────────────────────────────────────────┐
+│  Step 1: PDF 文本提取（脚本直接执行）                 │
+│  使用 PDFMiner.six 提取论文内容                      │
+└─────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────┐
+│  Step 2: Agent 执行 14 项格式检测                    │
+│  并行执行各项检测，保存到 thesis_check_results.json   │
+└─────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────┐
+│  Step 3: Agent 生成 JSON 报告（脚本）                │
+│  读取检测结果，生成 JSON 格式报告用于审核             │
+└─────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────┐
+│  Step 4: Agent 审核报告准确性                        │
+│  核实检测结果是否准确，如有问题返回 Step 2 重新检测   │
+└─────────────────────────────────────────────────────┘
+                          ↓
+                    ┌─────────────┐
+                    │  审核通过?  │
+                    └─────────────┘
+                      ↓ 是              ↓ 否
+              ┌─────────────┐    ┌─────────────┐
+              │  Step 5:   │    │  返回Step 2 │
+              │  生成HTML报告│    │  重新检测   │
+              └─────────────┘    └─────────────┘
 ```
 
 ## 输出报告
 
-检测完成后生成双语报告（Markdown + PDF）：
+检测完成后生成：
 
-- **执行摘要** — 问题与警告统计
-- **问题项列表** — 需要修复的严重问题
-- **警告项列表** — 建议检查的事项
-- **检测规范参考** — 相关格式要求说明
-- **页码索引** — 问题出现的具体位置
+- **JSON 报告** — 机器可读的检测结果，用于审核验证
+- **HTML 报告** — 人类可读的完整检测报告
 
-报告命名：`{论文名}_audit_report_{时间戳}.md/.pdf`
+报告命名：`{论文名}_audit_report_{时间戳}.json/.html`
 
 ## 规范参考
 
@@ -114,13 +118,14 @@ python3 scripts/thesis_audit_script.py thesis.pdf ./output --type cn
 1.1.1 Subsection Title
 ```
 
-### URL 位置规范
+### 误报规避
 
-正文中的 URL 应移至脚注，不应直接出现在正文中（参考文献部分除外）。
+以下为标准格式，不是问题：
 
-### arXiv 引用规范
-
-参考文献中的 arXiv preprint 应已有正式出版物 DOI。
+- "攻读硕士学位期间取得的研究成果 - 无" — 标准格式页
+- 表格页的左对齐 — 表格格式本就如此
+- 封面页内容少 — 封面本身就信息量少
+- PDF文本提取导致行长度变化大 — 字体/对齐检测需结合 PyMuPDF 视觉分析
 
 ## 脚本结构
 
@@ -128,7 +133,7 @@ python3 scripts/thesis_audit_script.py thesis.pdf ./output --type cn
 scripts/
 ├── thesis_audit_script.py   # 主入口，编排各模块
 ├── extractors/
-│   └── content.py          # PDF 内容提取（ContentExtractor 类）
+│   └── content.py          # PDF 内容提取（PDFMiner.six）
 ├── checks/                 # 各检测项独立模块
 │   ├── blank_pages.py      # 空白页面检测
 │   ├── placeholders.py     # 占位符检测
@@ -141,77 +146,18 @@ scripts/
 │   ├── abstracts.py         # 中英文摘要检测
 │   ├── text_alignment.py    # 文本对齐检测
 │   ├── figure_pages.py      # 图表页面统计
-│   ├── fonts.py            # 字体检测（使用PyMuPDF，显示问题文字）
+│   ├── fonts.py            # 字体检测（PyMuPDF，显示问题文字）
 │   └── font_line_spacing.py # 字体与行间距检测
 └── reports/
-    └── generator.py         # HTML报告生成
-```
-
-## 添加新检测项
-
-如需添加新检测项，在 `scripts/checks/` 下创建独立模块：
-
-```python
-# scripts/checks/my_check.py
-from typing import List, Dict
-
-def check_my_item(content_by_page: List[Dict], ...) -> Dict:
-    """
-    检测说明
-
-    Returns:
-        Dict with keys: ..., warnings: List[str]
-    """
-    warnings = []
-
-    # 检测逻辑...
-
-    if found_something:
-        warnings.append("发现 xxx 问题")
-
-    return {
-        'my_result_key': ...,
-        'warnings': warnings
-    }
-```
-
-然后在 `scripts/checks/__init__.py` 中导出，在 `thesis_audit_script.py` 的 `run_full_audit()` 中调用即可。
-
-## 检测报告示例
-
-```
-============================================================
-论文格式检测报告 / Thesis Format Audit Report
-============================================================
-
-PDF 路径: xxx.pdf
-总页数: xxx
-平均每页字符数: xxx
-
-============================================================
-❌ 问题项 / Issues Found:
-============================================================
-  • [具体问题]
-
-============================================================
-⚠️  警告项 / Warnings:
-============================================================
-  • [具体警告]
-
-============================================================
-✅ 通过项:
-============================================================
-  • [通过的检测项]
-
-检测完成
-============================================================
+    └── generator.py         # JSON/HTML 报告生成
 ```
 
 ## 注意事项
 
-1. **PDF 限制**：PDF 文本提取可能无法获取精确字体信息，建议结合 Word 模板校验
-2. **图像页**：纯图表页内容较少属正常现象
-3. **封面占位符**：隐私保护用的 `****` 占位符属正常
+1. **PDF 文本提取**：使用 PDFMiner.six，精度比 pypdf 更高（平均每页多 2% 字符）
+2. **字体检测**：需要安装 PyMuPDF 进行视觉分析
+3. **图像页**：纯图表页内容较少属正常现象
+4. **封面占位符**：隐私保护用的 `****` 占位符属正常
 
 ## 相关文档
 

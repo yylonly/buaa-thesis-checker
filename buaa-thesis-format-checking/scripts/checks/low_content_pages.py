@@ -15,6 +15,10 @@ def check_low_content_pages(content_by_page: List[Dict], average_chars: float) -
     bottom_blank_pages = []
 
     for content in content_by_page:
+        # 跳过标准格式页面："攻读硕士学位期间取得的研究成果 - 无"
+        if '攻读硕士学位期间取得的研究成果' in content['text']:
+            continue
+
         if 0 < content['chars'] < threshold:
             low_pages.append({
                 'page': content['page'],

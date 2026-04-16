@@ -32,7 +32,18 @@ def check_text_alignment(content_by_page: List[Dict], thesis_type: str = "cn") -
         if not content['text'] or content['chars'] < 200:
             continue
 
-        lines = content['text'].split('\n')
+        # 跳过特殊页面
+        text = content['text']
+        # 缩略语说明页 - 表格格式，左对齐正常
+        if '缩略语说明' in text or '主要符号表' in text:
+            continue
+
+        # 跳过表格页（包含大量表格内容、左对齐是正常的）
+        has_many_tables = bool(re.search(r'表\s*\d+', text) and text.count('表') >= 3)
+        if has_many_tables:
+            continue
+
+        lines = text.split('\n')
         page_line_lengths = []
 
         for line in lines:
@@ -46,7 +57,7 @@ def check_text_alignment(content_by_page: List[Dict], thesis_type: str = "cn") -
             avg_len = sum(page_line_lengths) / len(page_line_lengths)
             stdev = statistics.stdev(page_line_lengths) if len(page_line_lengths) > 1 else 0
             cv = stdev / avg_len if avg_len > 0 else 1
-            is_justified = cv < 0.15
+            is_justified = cv < 0.25
             page_alignment_details.append({
                 'page': content['page'],
                 'cv': round(cv, 4),
@@ -89,7 +100,7 @@ def check_text_alignment(content_by_page: List[Dict], thesis_type: str = "cn") -
                 'page': content['page'],
                 'cv': round(cv, 4),
                 'avg_length': round(avg_len, 1),
-                'is_justified': cv < 0.15
+                'is_justified': cv < 0.25
             }
             break
 
@@ -107,7 +118,7 @@ def check_text_alignment(content_by_page: List[Dict], thesis_type: str = "cn") -
         if avg_length > 0:
             coefficient_of_variation = stdev / avg_length
 
-            if coefficient_of_variation < 0.25:
+            if coefficient_of_variation < 0.30:
                 result['likely_justified'] = True
                 result['likely_left_aligned'] = False
                 align_type = "两端对齐 (Justified)"

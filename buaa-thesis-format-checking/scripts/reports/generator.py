@@ -1,6 +1,49 @@
-"""报告生成器 - HTML 报告"""
+"""报告生成器 - JSON和HTML报告"""
 import os
+import json
 from typing import Dict, List
+from datetime import datetime as dt
+
+
+def generate_json_report(
+    pdf_path: str,
+    total_pages: int,
+    average_chars: float,
+    issues: List[str],
+    bottom_blank_pages: List[Dict],
+    alignment_issues: List[Dict],
+    missing_transitions: List[Dict] = [],
+    spacing_info: Dict = {},
+    font_info: Dict = {},
+    detailed_spacing_info: Dict = {},
+    output_dir: str = "."
+) -> str:
+    """生成 JSON 格式的检测报告（用于Step 4审核）"""
+    pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+    timestamp = dt.now().strftime("%Y%m%d_%H%M%S")
+    json_path = os.path.join(output_dir, f"{pdf_name}_audit_report_{timestamp}.json")
+
+    report_data = {
+        "pdf_path": pdf_path,
+        "pdf_name": pdf_name,
+        "total_pages": total_pages,
+        "average_chars": average_chars,
+        "timestamp": timestamp,
+        "issues": issues,
+        "bottom_blank_pages": bottom_blank_pages,
+        "alignment_issues": alignment_issues,
+        "missing_transitions": missing_transitions,
+        "spacing_info": spacing_info,
+        "font_info": font_info,
+        "detailed_spacing_info": detailed_spacing_info,
+        "generated_at": dt.now().isoformat()
+    }
+
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(report_data, f, ensure_ascii=False, indent=2)
+
+    print(f"📄 JSON报告已保存: {json_path}")
+    return json_path
 
 
 def generate_html_report(
