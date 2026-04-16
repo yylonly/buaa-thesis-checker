@@ -5,3 +5,10 @@
 !buaa-thesis-format-checking/
 !buaa-thesis-content-checking/
 !README.md
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
