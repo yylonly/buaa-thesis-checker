@@ -43,23 +43,3 @@ For more commands, see `npx skills --help`.
 **功能:** 追溯关系图（问题→创新→验证）、主要问题分析、方法创新性、评估验证（数据集/指标/结果/局限性）、方法vs Baseline详细对比、CCF顶会顶刊判断、贡献点数量约束检查（≤3个）。
 
 **Trigger:** 用户提到"审核论文"、"论文评审"、"paper review"、"论文创新性"、"论文贡献"、"论文对比baseline"
-
-### External Skills (symlinked)
-
-- **brainstorming** - Brainstorming tool
-- **defuddle** - Text defuddling
-- **executing-plans** - Plan execution
-- **file-organizer** - File organization
-- **find-skills** - Skill finder
-- **json-canvas** - JSON canvas tool
-- **lark-*** - 飞书系列工具（approval, base, calendar, contact, doc, drive, event, im, mail, minutes, openapi-explorer, shared, sheets, skill-maker, task, vc, whiteboard, wiki, workflow-meeting-summary, workflow-standup-report）
-- **obsidian-*** - Obsidian系列工具（bases, cli, markdown）
-- **paper-finding** - 论文查找
-- **requesting-code-review** - Code review request
-- **skill-creator** - Skill creation
-- **systematic-debugging** - 调试工具
-- **test-driven-development** - TDD工具
-- **tutorial-engineer** - Tutorial工具
-- **using-superpowers** - 能力使用
-- **vercel-react-best-practices** - React最佳实践
-- **youtube-search** - YouTube搜索
