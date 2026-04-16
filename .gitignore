@@ -2,6 +2,6 @@
 *
 
 # But track these folders and files
-!buaa-thesis-audit/
-!paper-content-audit/
+!buaa-thesis-format-checking/
+!buaa-thesis-content-checking/
 !README.md
