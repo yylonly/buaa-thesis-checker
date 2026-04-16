@@ -3,7 +3,9 @@
 
 # But track these folders and files
 !buaa-thesis-format-checking/
+!buaa-thesis-format-checking/**
 !buaa-thesis-content-checking/
+!buaa-thesis-content-checking/**
 !README.md
 
 # Python cache
