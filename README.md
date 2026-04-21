@@ -1,52 +1,82 @@
-# Agent Skills
+# BUAA Thesis Checker — Agent Skills
 
-A collection of Claude Code skills for various tasks.
+A collection of Claude Code skills for BUAA (Beijing University of Aeronautics and Astronautics) thesis checking and document translation.
 
 ## Installation
 
-Install skills using the `skills` CLI:
-
 ```bash
-# Install a specific skill from GitHub
-npx skills add yylonly/buaa-thesis-checker
+# Install a specific skill
+npx skills add yylonly/buaa-thesis-checker --skill "buaa-thesis-format-checking"
 
-# Install globally (available to all projects)
-npx skills add yylonly/buaa-thesis-checker --global
+# Install all skills globally
+npx skills add yylonly/buaa-thesis-checker --all --global
 
-# List all available skills in this repo
+# List available skills
 npx skills add yylonly/buaa-thesis-checker --list
 
-# Remove a skill
-npx skills remove buaa-thesis-checker
-
-# Check for updates
-npx skills check
-
-# Update all skills
+# Update skills
 npx skills update
 ```
 
-For more commands, see `npx skills --help`.
+For full commands, see `npx skills --help`.
 
-## Available Skills
+## Skills
 
 ### buaa-thesis-format-checking
-北航硕士论文格式检测工具。用于自动化检测北京航空航天大学硕士论文的格式规范性。
 
-**功能:** 空白页面、占位符、章节连续性、过渡段、URL位置、arXiv无DOI、中英文摘要、文本对齐、字体检测、字号检测、行间距、论文题目字数、摘要字数、关键词数量、页边距、页码格式、书脊检测、图表清单、章节标题格式等。
+北航硕士论文格式自动化检测工具。
 
-**Trigger:** 用户提到"检测论文"、"格式检查"、"thesis audit"、"论文规范"
+**Triggers:** 检测论文、格式检查、thesis audit、论文规范
+
+**Detects:** 空白页面、占位符、章节连续性、过渡段、URL位置、中英文摘要、文本对齐、字体字号、行间距等14项
+
+**Tools:** Bash, python, Read, TaskCreate, TaskUpdate, TaskList
+
+---
 
 ### buaa-thesis-content-checking
-论文内容审核工具。用于审核学术论文的主要贡献、方法创新性、实验评估，以及与baseline的详细对比。
 
-**功能:** 追溯关系图（问题→创新→验证）、主要问题分析、方法创新性、评估验证（数据集/指标/结果/局限性）、方法vs Baseline详细对比、CCF顶会顶刊判断、贡献点数量约束检查（≤3个）。
+学术论文内容审核工具。
 
-**Trigger:** 用户提到"审核论文"、"论文评审"、"paper review"、"论文创新性"、"论文贡献"、"论文对比baseline"
+**Triggers:** 审核论文、论文评审、paper review、论文创新性、论文贡献、论文对比baseline
+
+**Features:** 追溯关系图(P→I→E)、CCF顶会顶刊判断、贡献点约束(≤3个)、Markdown+HTML中英文报告
+
+**Tools:** Bash, python, Read, TaskCreate, TaskUpdate, TaskList, WebSearch, Agent
+
+---
 
 ### cn-to-en-translator
-中文 Word 文档 (.doc/.docx) 翻译为地道的英文文档。适用于课程大纲、学术论文、报告等中英文翻译工作流。
 
-**功能:** 文件格式转换、专业翻译、地道表达验证、生成格式规范的英文 Word 文档。
+中文Word文档(.doc/.docx)翻译为地道英文。
 
-**Trigger:** 用户提到"翻译成英文"、"中翻英"、"translate to English"，或涉及 .doc/.docx 文件需要中译英
+**Triggers:** 翻译成英文、中翻英、translate to English
+
+**Features:** 文件格式转换、专业翻译、地道表达验证、生成英文Word文档
+
+**Tools:** Bash, python, Read, Write, WebSearch
+
+---
+
+## Structure
+
+```
+buaa-thesis-checker/
+├── buaa-thesis-format-checking/
+│   └── SKILL.md
+├── buaa-thesis-content-checking/
+│   └── SKILL.md
+├── cn-to-en-translator/
+│   ├── SKILL.md
+│   ├── scripts/
+│   └── references/
+└── README.md
+```
+
+## Skill Format
+
+Each skill follows the [Agent Skills spec](https://github.com/vercel-labs/skills):
+
+- `SKILL.md` with YAML frontmatter (name, description, allowed-tools)
+- Markdown body with workflow instructions
+- Optional `scripts/` and `references/` directories
