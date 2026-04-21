@@ -43,3 +43,10 @@ For more commands, see `npx skills --help`.
 **功能:** 追溯关系图（问题→创新→验证）、主要问题分析、方法创新性、评估验证（数据集/指标/结果/局限性）、方法vs Baseline详细对比、CCF顶会顶刊判断、贡献点数量约束检查（≤3个）。
 
 **Trigger:** 用户提到"审核论文"、"论文评审"、"paper review"、"论文创新性"、"论文贡献"、"论文对比baseline"
+
+### cn-to-en-translator
+中文 Word 文档 (.doc/.docx) 翻译为地道的英文文档。适用于课程大纲、学术论文、报告等中英文翻译工作流。
+
+**功能:** 文件格式转换、专业翻译、地道表达验证、生成格式规范的英文 Word 文档。
+
+**Trigger:** 用户提到"翻译成英文"、"中翻英"、"translate to English"，或涉及 .doc/.docx 文件需要中译英
