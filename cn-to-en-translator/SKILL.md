@@ -4,7 +4,7 @@ description: 中文Word文档(.doc/.docx)翻译为地道英文文档。用于课
 compatibility: Requires textutil (macOS) or python-docx for file handling; minimax-docx for output generation.
 metadata:
   author: yylonly
-  version: "1.0"
+  version: "1.1"
 allowed-tools: Bash python Read Write WebSearch
 ---
 
