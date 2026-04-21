@@ -6,6 +6,8 @@
 !buaa-thesis-format-checking/**
 !buaa-thesis-content-checking/
 !buaa-thesis-content-checking/**
+!skills/
+!skills/**
 !README.md
 
 # Python cache
