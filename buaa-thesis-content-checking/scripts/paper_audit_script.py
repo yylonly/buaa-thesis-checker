@@ -18,6 +18,7 @@ Paper Content Audit Script
 
 import sys
 import os
+from typing import Dict, List, Optional, Any
 
 # 添加 scripts 目录到路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
