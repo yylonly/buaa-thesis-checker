@@ -1,7 +1,6 @@
 ---
 name: buaa-thesis-format-checking
 description: 北航硕士论文格式自动化检测工具。用于检测论文是否符合北京航空航天大学学位论文书写规范。触发场景：用户提到"检测论文"、"格式检查"、"thesis audit"、"论文规范"时。功能：空白页面、占位符、章节连续性、过渡段、URL位置、中英文摘要、文本对齐、字体字号、行间距等14项检测。
-compatibility: Requires Python 3.10+ with pypdf and pymupdf installed.
 metadata:
   author: yylonly
   version: "1.1"
@@ -17,8 +16,12 @@ Activate when user mentions: "检测论文"、"格式检查"、"thesis audit"、
 ## Quick Start
 
 ```bash
-python3 <skill_path>/scripts/thesis_audit_script.py <pdf_path> [output_dir] [--type cn|en]
+python3 <skill_path>/scripts/thesis_audit_script.py --step1 <pdf_path> <output_dir>
+python3 <skill_path>/scripts/thesis_audit_script.py --step2 <output_dir>/thesis_text_extracted.json --type cn
+python3 <skill_path>/scripts/thesis_audit_script.py --step3-json <output_dir>/thesis_check_results.json <pdf_path> <output_dir>
 ```
+
+Use the stepwise workflow for thesis review. It preserves intermediate artifacts and avoids cross-talk during parallel runs.
 
 ## Workflow
 
@@ -52,11 +55,23 @@ python3 <skill_path>/scripts/thesis_audit_script.py <pdf_path> [output_dir] [--t
 - "攻读硕士学位期间取得的研究成果 - 无" is correct format, not a problem
 - Table pages use left-align, which is correct
 - Cover page has naturally low content
+- Title, authorization, declaration, abstract divider, table of contents, symbol table, chapter-ending, and figure/table-heavy pages often have naturally low text density
+- Font,字号,line spacing, margins, alignment, and figure spacing are candidate findings only; cite them as confirmed problems only after PDF or source-layout verification
+
+## Operational Notes
+
+- Use a dedicated output directory for every PDF, especially in parallel review.
+- If a PDF path with Chinese characters, spaces, or punctuation causes report generation failure, create an ASCII symlink/copy in the output directory and rerun against it.
+- If HTML generation fails after checks have completed, keep `thesis_text_extracted.json` and `thesis_check_results.json`; downstream review may continue from these artifacts.
+- `--step2` writes `thesis_check_results.json` beside the `thesis_text_extracted.json` input, which makes parallel runs safer.
+- Do not treat this tool as a final authority. Its findings are candidates for agent/manual verification.
 
 ## Dependencies
 
+Requires Python 3.10+ with `pypdf` and `pymupdf`.
+
 ```bash
-pip install pypdf pymupdf
+python3 -m pip install pypdf pymupdf
 ```
 
 ## References

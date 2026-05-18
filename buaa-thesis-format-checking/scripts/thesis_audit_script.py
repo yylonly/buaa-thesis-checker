@@ -369,8 +369,8 @@ def run_step2(text_path: str, thesis_type: str = "cn") -> dict:
         'checked_at': datetime.now().isoformat()
     }
 
-    # 保存到临时文件
-    results_file_path = TEMP_RESULTS_FILE
+    # 保存到与 Step 1 输出相同的目录，避免并行评审时多个任务互相覆盖。
+    results_file_path = os.path.join(os.path.dirname(os.path.abspath(text_path)), TEMP_RESULTS_FILE)
     with open(results_file_path, 'w', encoding='utf-8') as f:
         json.dump(check_results, f, ensure_ascii=False, indent=2)
 

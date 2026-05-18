@@ -6,6 +6,8 @@
 !buaa-thesis-format-checking/**
 !buaa-thesis-content-checking/
 !buaa-thesis-content-checking/**
+!buaa-thesis-checking/
+!buaa-thesis-checking/**
 !cn-to-en-translator/
 !cn-to-en-translator/**
 !README.md

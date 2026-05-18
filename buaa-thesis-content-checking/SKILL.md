@@ -1,11 +1,6 @@
 ---
 name: buaa-thesis-content-checking
 description: 学术论文内容审核工具。用于审核论文的主要贡献、方法创新性、实验评估及baseline对比。触发：用户提到"审核论文"、"论文评审"、"paper review"、"论文创新性"、"论文贡献"、"论文评估"、"review paper"、"audit paper"、"论文对比baseline"。核心：追溯关系图(P→I→E)、CCF顶会顶刊判断、贡献点数量约束(≤3个)。输出：Markdown + HTML格式中文英文审核报告。
-compatibility: Requires Python 3.9+ with pdfplumber, PyMuPDF, and pypdf installed.
-metadata:
-  author: yylonly
-  version: "1.2"
-allowed-tools: Bash python Read TaskCreate TaskUpdate TaskList WebSearch Agent
 ---
 
 # Paper Content Audit Skill
@@ -18,7 +13,7 @@ Activate when user mentions: "审核论文"、"论文评审"、"paper review"、
 
 ```bash
 # Step 1: Check and install dependencies automatically
-python3 <skill_path>/scripts/check_deps.py
+python3 <skill_path>/scripts/check_deps.py --yes
 
 # Step 2: Run PDF extraction and analysis
 python3 <skill_path>/scripts/paper_audit_script.py --step1 <pdf_path> [output_dir]
@@ -41,8 +36,10 @@ python3 -m pip install pymupdf pdfplumber pypdf --quiet
 Or use the helper script:
 
 ```bash
-python3 <skill_path>/scripts/check_deps.py
+python3 <skill_path>/scripts/check_deps.py --yes
 ```
+
+Use `--check-only` when you only want dependency status. In non-interactive shells, do not call `check_deps.py` without `--yes` or `--check-only`.
 
 ## Workflow
 
@@ -67,7 +64,7 @@ python3 <skill_path>/scripts/check_deps.py
 
 ```bash
 # First ensure dependencies are installed
-python3 <skill_path>/scripts/check_deps.py
+python3 <skill_path>/scripts/check_deps.py --yes
 
 # Then run extraction
 python3 <skill_path>/scripts/paper_audit_script.py --step1 <pdf_path> [output_dir]
@@ -94,12 +91,27 @@ Generate 3 files from JSON:
 2. `paper_audit_report_YYYYMMDD_HHMMSS_zh.html` — Chinese HTML
 3. `paper_audit_report_YYYYMMDD_HHMMSS_en.html` — English HTML
 
+## Fallback Workflow
+
+If the full automatic content report fails because `anthropic` is unavailable, `ANTHROPIC_API_KEY` is not set, or the LLM/report script raises an exception:
+
+1. Keep the successful `--step1` output, especially `paper_text_extracted.txt`.
+2. Use the extracted text as the authoritative thesis source.
+3. Manually build the P→I→E analysis from abstract, introduction, method, experiment, conclusion, and reference sections.
+4. Record the script limitation in the final report metadata.
+5. Continue the review instead of blocking, as long as PDF text extraction succeeded.
+
+When the PDF is scanned/image-based and text extraction is poor, stop and request OCR before judging academic content.
+
 ## Common Issues
 
 | Issue | Solution |
 |-------|----------|
 | `ModuleNotFoundError: No module named 'pdfplumber'` | Run `python3 -m pip install pdfplumber pymupdf pypdf` |
+| `EOFError` in `check_deps.py` | Run `python3 scripts/check_deps.py --yes` or `--check-only` |
+| `ModuleNotFoundError: No module named 'anthropic'` | Continue with extracted text if no API-based LLM report is required; install `anthropic` only when automatic LLM extraction is needed |
 | `ModuleNotFoundError: name 'Dict' is not defined` | The script already includes `from typing import Dict, List, Optional, Any` |
+| `NameError: name 're' is not defined` | Update to the current script version; fallback analysis depends on top-level `import re` |
 | PDF is scanned/image-based | Use OCR tool first, then feed text to the script |
 
 ## CCF Reference
@@ -120,6 +132,8 @@ Generate 3 files from JSON:
 
 ```bash
 python3 -m pip install pymupdf pdfplumber pypdf
+# Optional only for API-backed automatic LLM extraction:
+python3 -m pip install anthropic
 ```
 
 ## References

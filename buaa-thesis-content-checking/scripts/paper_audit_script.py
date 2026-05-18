@@ -18,6 +18,7 @@ Paper Content Audit Script
 
 import sys
 import os
+import re
 from typing import Dict, List, Optional, Any
 
 # 添加 scripts 目录到路径

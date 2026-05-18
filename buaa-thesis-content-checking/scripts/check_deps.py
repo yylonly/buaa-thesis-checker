@@ -4,9 +4,10 @@ Dependency checker for paper audit skill.
 Checks if required packages are installed and offers to install them.
 """
 
-import sys
-import subprocess
+import argparse
 import os
+import subprocess
+import sys
 
 
 def check_package(package_name, import_name=None):
@@ -45,6 +46,11 @@ def install_package(package_name):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Check and optionally install paper audit dependencies.")
+    parser.add_argument("-y", "--yes", action="store_true", help="Install missing dependencies without prompting.")
+    parser.add_argument("--check-only", action="store_true", help="Only check dependencies; do not prompt or install.")
+    args = parser.parse_args()
+
     print("=" * 60)
     print("Checking dependencies for paper audit skill...")
     print("=" * 60)
@@ -75,7 +81,25 @@ def main():
         return 0
 
     print(f"Missing {len(missing)} package(s).")
-    response = input("Would you like to install them now? [Y/n]: ").strip().lower()
+    if args.check_only:
+        print("Check-only mode: skipping installation.")
+        print("To install manually, run:")
+        for display_name, import_name in missing:
+            print(f"  python3 -m pip install {import_name}")
+        return 1
+
+    if args.yes:
+        response = "yes"
+    elif not sys.stdin.isatty():
+        print("Non-interactive shell detected; skipping prompt.")
+        print("To install automatically, run:")
+        print(f"  {sys.executable} {__file__} --yes")
+        print("Or install manually:")
+        for display_name, import_name in missing:
+            print(f"  python3 -m pip install {import_name}")
+        return 1
+    else:
+        response = input("Would you like to install them now? [Y/n]: ").strip().lower()
 
     if response == "" or response == "y" or response == "yes":
         print()
