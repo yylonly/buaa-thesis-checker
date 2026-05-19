@@ -1,0 +1,40 @@
+{
+  "name": "buaa-thesis-checker",
+  "version": "0.1.0",
+  "description": "BUAA thesis checking and document translation skills for Codex.",
+  "author": {
+    "name": "yylonly",
+    "url": "https://github.com/yylonly"
+  },
+  "homepage": "https://github.com/yylonly/buaa-thesis-checker",
+  "repository": "https://github.com/yylonly/buaa-thesis-checker",
+  "license": "MIT",
+  "keywords": [
+    "buaa",
+    "thesis",
+    "format-checking",
+    "paper-review",
+    "translation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BUAA Thesis Checker",
+    "shortDescription": "北航论文格式、内容与综合评审技能包",
+    "longDescription": "Provides Codex skills for BUAA thesis format checking, academic content review, comprehensive thesis review comments, and Chinese-to-English Word document translation.",
+    "developerName": "yylonly",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write",
+      "Bash",
+      "Python"
+    ],
+    "websiteURL": "https://github.com/yylonly/buaa-thesis-checker",
+    "defaultPrompt": [
+      "检查这篇北航论文的格式并生成报告。",
+      "审核这篇论文的贡献、创新和实验。",
+      "生成北航学位论文综合评审意见。"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

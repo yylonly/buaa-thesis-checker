@@ -10,7 +10,16 @@
 !buaa-thesis-checking/**
 !cn-to-en-translator/
 !cn-to-en-translator/**
+!.agents/
+!.agents/**
+!.claude-plugin/
+!.claude-plugin/**
+!plugins/
+!plugins/**
 !README.md
+
+# macOS metadata
+.DS_Store
 
 # Python cache
 __pycache__/
