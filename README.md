@@ -1,164 +1,287 @@
-# BUAA Thesis Audit
+# BUAA Thesis Checker
 
-北航硕士论文格式自动化检测工具，用于验证论文是否符合《北京航空航天大学学位论文书写规范与排版格式》。
+面向北京航空航天大学学位论文评审场景的 Agent Skills 集合，提供论文格式检查、论文内容审核、综合评审意见生成，以及中文 Word 文档英译能力。
 
-## 功能特性
+本仓库不是一个单一命令行应用，而是一组可安装到 Agent/Codex/Claude Code 工作流中的技能包。每个技能目录都包含 `SKILL.md`、可复用脚本和必要参考资料。
 
-| 检测项 | 类型 | 说明 |
-|--------|------|------|
-| 空白页面 | ⚠️ 警告 | 检测无内容页面 |
-| 占位符 | ⚠️ 警告 | XXX, ****, TODO, TBD 等 |
-| 章节连续性 | ✅/❌ | Chapter 1-5 是否完整 |
-| 低内容页面 | ⚠️ 警告 | 内容 < 20% 平均值的页面 |
-| 未完成标记 | ⚠️ 警告 | "to be continued" 等 |
-| 过渡段 | ⚠️ 警告 | 二级与三级标题之间缺少衔接 |
-| URL 位置 | ❌ 问题 | 正文中的 URL 应在脚注 |
-| arXiv 无 DOI | ⚠️ 警告 | arXiv 引用应已有正式出版 |
-| 中英文摘要 | ⚠️ 警告 | 摘要存在性及字数检查 |
-| 文本对齐 | ⚠️ 警告 | 正文应使用两端对齐 (justify) |
-| 字体检测 | ⚠️ 警告 | 正文字体规范(SimSun/Times New Roman)，显示问题文字和当前字体 |
-| 字号检测 | ⚠️ 警告 | 正文字号规范(9-10.5pt)，显示问题文字和当前字号 |
-| 行间距检测 | ⚠️ 警告 | 中文论文正文应为1.5倍行距 |
+## 功能概览
 
-## 安装依赖
+| Skill | 用途 | 主要输出 |
+| --- | --- | --- |
+| `buaa-thesis-format-checking` | 北航论文格式自动化检查 | JSON/HTML 格式检查报告 |
+| `buaa-thesis-content-checking` | 学术内容审核，分析贡献、创新、实验与 baseline | Markdown/HTML 内容审核报告 |
+| `buaa-thesis-checking` | 串联格式检查和内容审核，生成正式评审意见 | 综合 Markdown/HTML 评审意见 |
+| `cn-to-en-translator` | 中文 `.doc/.docx` 文档翻译为英文 Word 文档 | 英文 `.docx` |
+
+## 仓库结构
+
+```text
+buaa-thesis-checker/
+├── README.md
+├── .agents/plugins/marketplace.json
+├── .claude-plugin/marketplace.json
+├── plugins/
+│   └── buaa-thesis-checker/
+│       ├── .codex-plugin/plugin.json
+│       ├── .claude-plugin/plugin.json
+│       ├── README.md
+│       └── skills/
+├── buaa-thesis-checking/
+│   ├── SKILL.md
+│   └── agents/openai.yaml
+├── buaa-thesis-format-checking/
+│   ├── SKILL.md
+│   ├── README.md
+│   ├── references/
+│   └── scripts/
+│       ├── thesis_audit_script.py
+│       ├── checks/
+│       ├── extractors/
+│       └── reports/
+├── buaa-thesis-content-checking/
+│   ├── SKILL.md
+│   ├── README.md
+│   ├── evals/
+│   ├── references/
+│   └── scripts/
+│       ├── check_deps.py
+│       ├── paper_audit_script.py
+│       ├── checks/
+│       ├── extractors/
+│       └── reports/
+└── cn-to-en-translator/
+    ├── SKILL.md
+    └── scripts/
+```
+
+## 安装
+
+本仓库同时提供三种集成方式：
+
+1. 直接安装单个 Agent Skill
+2. 通过 Codex plugin marketplace 安装
+3. 通过 Claude Code plugin marketplace 或 `--plugin-dir` 加载
+
+### Agent Skills
+
+使用 `skills` CLI 从 GitHub 安装单个或全部技能：
 
 ```bash
-# 核心依赖 - PDF文本提取（使用 PDFMiner.six，精度更高）
-pip install pdfminer.six
+# 查看仓库内可安装的技能
+npx skills add yylonly/buaa-thesis-checker --list
 
-# 字体检测和详细间距分析（推荐）
-pip install pymupdf
+# 安装所有技能到全局
+npx skills add yylonly/buaa-thesis-checker --all --global
+
+# 只安装格式检查技能
+npx skills add yylonly/buaa-thesis-checker --skill "buaa-thesis-format-checking"
+
+# 更新已安装技能
+npx skills update
 ```
 
-## 快速开始
+也可以直接在仓库内运行各技能的 Python 脚本，适合调试或批处理。
+
+### Codex Plugin
+
+Codex 插件位于：
+
+```text
+plugins/buaa-thesis-checker/
+```
+
+插件 manifest：
+
+```text
+plugins/buaa-thesis-checker/.codex-plugin/plugin.json
+```
+
+仓库内 Codex marketplace：
+
+```text
+.agents/plugins/marketplace.json
+```
+
+该 marketplace 指向本仓库的本地插件路径 `./plugins/buaa-thesis-checker`，便于在 Codex 插件 UI 或本地 marketplace 流程中发现和安装。
+
+### Claude Code Plugin
+
+Claude Code 插件使用同一个插件目录，并额外提供 Claude Code manifest：
+
+```text
+plugins/buaa-thesis-checker/.claude-plugin/plugin.json
+```
+
+本地开发测试：
 
 ```bash
-# 完整流程（Step 1-5）
-python3 scripts/thesis_audit_script.py <pdf_path> [output_dir] --type cn|en
-
-# 分步执行
-python3 scripts/thesis_audit_script.py --step1 <pdf_path> [output_dir]   # 提取PDF文本
-python3 scripts/thesis_audit_script.py --step2 <text_path> --type cn|en   # 执行格式检测
-python3 scripts/thesis_audit_script.py --step3-json <results_path> <pdf>  # 生成JSON报告
-python3 scripts/thesis_audit_script.py --step3-html <results_path> <pdf>  # 生成HTML报告
+claude --plugin-dir ./plugins/buaa-thesis-checker
 ```
 
-**参数：**
+通过本仓库的 Claude Code marketplace 安装：
 
-| 参数 | 必填 | 说明 |
-|------|------|------|
-| `pdf_path` | ✅ | 论文 PDF 文件路径 |
-| `output_dir` | ❌ | 报告输出目录（默认当前目录） |
-| `--type` / `-t` | ❌ | `cn` 中文论文，`en` 英文论文 |
-
-## 5步检测流程
-
-本工具采用 5 步检测流程，Step 2 和 Step 4 可使用 Agent 并行执行：
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Step 1: PDF 文本提取（脚本直接执行）                 │
-│  使用 PDFMiner.six 提取论文内容                      │
-└─────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────┐
-│  Step 2: Agent 执行 14 项格式检测                    │
-│  并行执行各项检测，保存到 thesis_check_results.json   │
-└─────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────┐
-│  Step 3: Agent 生成 JSON 报告（脚本）                │
-│  读取检测结果，生成 JSON 格式报告用于审核             │
-└─────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────┐
-│  Step 4: Agent 审核报告准确性                        │
-│  核实检测结果是否准确，如有问题返回 Step 2 重新检测   │
-└─────────────────────────────────────────────────────┘
-                          ↓
-                    ┌─────────────┐
-                    │  审核通过?  │
-                    └─────────────┘
-                      ↓ 是              ↓ 否
-              ┌─────────────┐    ┌─────────────┐
-              │  Step 5:   │    │  返回Step 2 │
-              │  生成HTML报告│    │  重新检测   │
-              └─────────────┘    └─────────────┘
+```bash
+claude plugin marketplace add .
+claude plugin install buaa-thesis-checker@buaa-thesis-tools
 ```
 
-## 输出报告
+Claude Code marketplace 文件：
 
-检测完成后生成：
-
-- **JSON 报告** — 机器可读的检测结果，用于审核验证
-- **HTML 报告** — 人类可读的完整检测报告
-
-报告命名：`{论文名}_audit_report_{时间戳}.json/.html`
-
-## 规范参考
-
-### 论文结构要求
-
-| 部分 | 要求 |
-|------|------|
-| 封面 | 中英文封面、分类号、论文编号 |
-| 摘要 | 中文约 500 字，关键词 3-5 个 |
-| 目录 | 三级标题结构 |
-| 正文 | Chapter 1-5 |
-| 参考文献 | 格式规范 |
-| 致谢 | 限一页 |
-
-### 过渡段规范
-
-二级标题（如 1.1）后直接跟三级标题（如 1.1.1）视为不规范，需有过渡段：
-
-```
-1.1 Section Title
-[至少 60 字符的过渡段]
-1.1.1 Subsection Title
+```text
+.claude-plugin/marketplace.json
 ```
 
-### 误报规避
+安装后技能会被命名空间化，例如：
 
-以下为标准格式，不是问题：
-
-- "攻读硕士学位期间取得的研究成果 - 无" — 标准格式页
-- 表格页的左对齐 — 表格格式本就如此
-- 封面页内容少 — 封面本身就信息量少
-- PDF文本提取导致行长度变化大 — 字体/对齐检测需结合 PyMuPDF 视觉分析
-
-## 脚本结构
-
-```
-scripts/
-├── thesis_audit_script.py   # 主入口，编排各模块
-├── extractors/
-│   └── content.py          # PDF 内容提取（PDFMiner.six）
-├── checks/                 # 各检测项独立模块
-│   ├── blank_pages.py      # 空白页面检测
-│   ├── placeholders.py     # 占位符检测
-│   ├── section_continuity.py # 章节连续性检测
-│   ├── low_content_pages.py  # 低内容页面检测（含下方空白检测）
-│   ├── incomplete_content.py # 未完成标记检测
-│   ├── transition_paragraphs.py # 过渡段检测
-│   ├── urls_in_body.py     # URL 位置检测
-│   ├── arxiv_without_doi.py # arXiv DOI 检测
-│   ├── abstracts.py         # 中英文摘要检测
-│   ├── text_alignment.py    # 文本对齐检测
-│   ├── figure_pages.py      # 图表页面统计
-│   ├── fonts.py            # 字体检测（PyMuPDF，显示问题文字）
-│   └── font_line_spacing.py # 字体与行间距检测
-└── reports/
-    └── generator.py         # JSON/HTML 报告生成
+```text
+/buaa-thesis-checker:buaa-thesis-checking
+/buaa-thesis-checker:buaa-thesis-format-checking
+/buaa-thesis-checker:buaa-thesis-content-checking
+/buaa-thesis-checker:cn-to-en-translator
 ```
 
-## 注意事项
+## 依赖
 
-1. **PDF 文本提取**：使用 PDFMiner.six，精度比 pypdf 更高（平均每页多 2% 字符）
-2. **字体检测**：需要安装 PyMuPDF 进行视觉分析
-3. **图像页**：纯图表页内容较少属正常现象
-4. **封面占位符**：隐私保护用的 `****` 占位符属正常
+建议使用 Python 3.10+。
 
-## 相关文档
+格式检查：
 
-- [第三章：书写规范与排版格式](./references/Chapter-3-Writing-Standard-and-Printing-Styles.md)
+```bash
+python3 -m pip install pdfminer.six pymupdf pypdf
+```
+
+内容审核：
+
+```bash
+python3 -m pip install pymupdf pdfplumber pypdf
+```
+
+内容审核如果需要 API 驱动的自动 LLM 提取，可额外安装：
+
+```bash
+python3 -m pip install anthropic
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+内容审核目录提供依赖检查脚本：
+
+```bash
+python3 buaa-thesis-content-checking/scripts/check_deps.py --check-only
+python3 buaa-thesis-content-checking/scripts/check_deps.py --yes
+```
+
+## 快速使用
+
+### 1. 综合评审
+
+推荐通过 Agent 技能调用：
+
+```text
+Use $buaa-thesis-checking to review this BUAA thesis PDF and write the two required academic comments.
+```
+
+该技能会先执行格式检查，再核对可能误报，然后执行内容审核，最后生成两个核心评审块：
+
+- 学术评语
+- 不足、问题与修改意见
+
+输出包括机器可读的 Markdown 和自包含 HTML 报告。
+
+### 2. 格式检查
+
+完整流程：
+
+```bash
+python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py thesis.pdf ./output --type cn
+```
+
+分步执行，便于复核中间产物：
+
+```bash
+python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step1 thesis.pdf ./output
+python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step2 ./output/thesis_text_extracted.json --type cn
+python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step3-json ./output/thesis_check_results.json thesis.pdf ./output
+python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step3-html ./output/thesis_check_results.json thesis.pdf ./output
+```
+
+`--type` 可选值：
+
+- `cn`：中文论文，默认值
+- `en`：英文论文
+
+检测项包括空白页、占位符、章节连续性、低内容页、未完成标记、过渡段、正文 URL、arXiv 无 DOI、中英文摘要、文本对齐、图表页统计、字体字号、行间距和详细间距。
+
+注意：格式检查结果应视为候选问题。封面、声明页、目录页、表格页、图表页等容易产生低内容或对齐类误报，正式评审前需要人工或 Agent 复核。
+
+### 3. 内容审核
+
+先检查依赖：
+
+```bash
+python3 buaa-thesis-content-checking/scripts/check_deps.py --check-only
+```
+
+审核 PDF：
+
+```bash
+python3 buaa-thesis-content-checking/scripts/paper_audit_script.py thesis.pdf ./output
+```
+
+也可以直接审核文本：
+
+```bash
+python3 buaa-thesis-content-checking/scripts/paper_audit_script.py --text "论文全文内容..." ./output
+```
+
+内容审核关注：
+
+- 主要贡献是否清晰且不超过 3 个核心点
+- 方法创新是否能追溯到研究问题
+- 实验设计、数据集、指标、baseline 和消融是否支撑结论
+- 是否存在只做增量改进但表述为强创新的问题
+- 是否能形成 `问题 -> 方法/创新 -> 实验证据` 的链条
+
+### 4. 中文文档英译
+
+通过 `cn-to-en-translator` 技能处理 `.doc` 或 `.docx` 文件。技能会提取原文、保留结构、翻译为专业英文，并生成现代 Word `.docx` 输出。
+
+触发示例：
+
+```text
+Use $cn-to-en-translator to translate this Chinese syllabus into English.
+```
+
+## 输出文件
+
+不同技能会生成不同命名的报告文件：
+
+| 技能 | 常见文件 |
+| --- | --- |
+| 格式检查 | `thesis_text_extracted.json`, `thesis_check_results.json`, `*_audit_report_*.json`, `*_audit_report_*.html` |
+| 内容审核 | `paper_audit_report_*.md`, `paper_audit_report_*_zh.html`, `paper_audit_report_*_en.html` |
+| 综合评审 | `buaa_thesis_review_*.md`, `buaa_thesis_review_*.html` |
+| 中英翻译 | 英文 `.docx` 文件 |
+
+建议每篇论文使用独立输出目录，避免并行或重复运行时中间文件相互覆盖。
+
+## 设计原则
+
+- 自动检查只提供候选结论，正式评语必须基于证据复核。
+- 综合评审优先生成可用于学位论文评阅的正式中文意见，而不是长清单。
+- 内容审核限制核心问题、贡献和创新数量，避免把枝节改动包装成主要贡献。
+- HTML 报告应自包含、可离线打开，适合给人阅读；Markdown 报告适合后续编辑和机器处理。
+
+## 维护说明
+
+每个技能遵循 Agent Skills 结构：
+
+- `SKILL.md`：技能元数据、触发条件、工作流和注意事项
+- `scripts/`：可复用脚本
+- `references/`：规范、模板或参考资料
+- `README.md`：技能级说明文档，若存在
+
+修改技能行为时，优先同步更新对应目录下的 `SKILL.md` 和根目录 `README.md`。
+
+## License
+
+MIT License

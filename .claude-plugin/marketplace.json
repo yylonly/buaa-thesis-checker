@@ -1,0 +1,27 @@
+{
+  "name": "buaa-thesis-tools",
+  "owner": {
+    "name": "yylonly"
+  },
+  "description": "Claude Code marketplace for BUAA thesis checking and document translation skills.",
+  "version": "0.1.0",
+  "plugins": [
+    {
+      "name": "buaa-thesis-checker",
+      "source": "./plugins/buaa-thesis-checker",
+      "description": "BUAA thesis format checking, content review, comprehensive review comments, and Chinese-to-English document translation.",
+      "version": "0.1.0",
+      "author": {
+        "name": "yylonly",
+        "url": "https://github.com/yylonly"
+      },
+      "category": "Productivity",
+      "tags": [
+        "buaa",
+        "thesis",
+        "paper-review",
+        "translation"
+      ]
+    }
+  ]
+}

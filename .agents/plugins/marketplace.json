@@ -1,0 +1,20 @@
+{
+  "name": "buaa-thesis-tools",
+  "interface": {
+    "displayName": "BUAA Thesis Tools"
+  },
+  "plugins": [
+    {
+      "name": "buaa-thesis-checker",
+      "source": {
+        "source": "local",
+        "path": "./plugins/buaa-thesis-checker"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

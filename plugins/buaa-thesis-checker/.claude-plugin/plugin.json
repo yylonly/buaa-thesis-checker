@@ -1,0 +1,20 @@
+{
+  "name": "buaa-thesis-checker",
+  "version": "0.1.0",
+  "description": "BUAA thesis checking and document translation skills for Claude Code.",
+  "author": {
+    "name": "yylonly",
+    "url": "https://github.com/yylonly"
+  },
+  "homepage": "https://github.com/yylonly/buaa-thesis-checker",
+  "repository": "https://github.com/yylonly/buaa-thesis-checker",
+  "license": "MIT",
+  "keywords": [
+    "buaa",
+    "thesis",
+    "format-checking",
+    "paper-review",
+    "translation"
+  ],
+  "skills": "./skills/"
+}

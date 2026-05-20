@@ -1,3 +1,29 @@
+# Ignore everything by default
+*
+
+# But track these folders and files
+!buaa-thesis-format-checking/
+!buaa-thesis-format-checking/**
+!buaa-thesis-content-checking/
+!buaa-thesis-content-checking/**
+!buaa-thesis-checking/
+!buaa-thesis-checking/**
+!cn-to-en-translator/
+!cn-to-en-translator/**
+!.agents/
+!.agents/**
+!.claude-plugin/
+!.claude-plugin/**
+!plugins/
+!plugins/**
+!README.md
+
+# macOS metadata
 .DS_Store
+
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
