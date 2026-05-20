@@ -1,9 +1,9 @@
 ---
 name: buaa-thesis-format-checking
-description: 北航硕士论文格式自动化检测工具。用于检测论文是否符合北京航空航天大学学位论文书写规范。触发场景：用户提到"检测论文"、"格式检查"、"thesis audit"、"论文规范"时。功能：空白页面、占位符、章节连续性、过渡段、URL位置、中英文摘要、文本对齐、字体字号、行间距等14项检测。
+description: 北航学位论文格式自动化检测工具。用于检测论文是否符合北京航空航天大学学位论文书写规范，支持硕士、博士及本科毕业设计论文。触发场景：用户提到"检测论文"、"格式检查"、"thesis audit"、"论文规范"、"论文格式"时自动触发。功能：空白页面、占位符、章节连续性、过渡段、URL位置、中英文摘要（中英文关键词）、文本对齐、字体字号、行间距、图表间距等14项检测。注意：行内文字间距过大/视觉空洞问题无法自动检测，必须人工核对PDF。
 metadata:
   author: yylonly
-  version: "1.1"
+  version: "1.2"
 allowed-tools: Bash python Read TaskCreate TaskUpdate TaskList
 ---
 
@@ -57,6 +57,13 @@ Use the stepwise workflow for thesis review. It preserves intermediate artifacts
 - Cover page has naturally low content
 - Title, authorization, declaration, abstract divider, table of contents, symbol table, chapter-ending, and figure/table-heavy pages often have naturally low text density
 - Font,字号,line spacing, margins, alignment, and figure spacing are candidate findings only; cite them as confirmed problems only after PDF or source-layout verification
+
+## Cannot Auto-Detect (Manual Check Required)
+
+以下问题无法通过文本提取自动检测，**必须人工核对PDF**：
+- **行内文字间距过大/视觉空洞**：正文页面文字两端对齐但内部有明显缝隙，呈现"锯齿状"空白区域
+- **部分过渡段缺失**：仅检测二级与三级标题之间，三级与四级之间未覆盖
+- **图表编号缺失或格式错误**：仅检测间距，不检测编号
 
 ## Operational Notes
 

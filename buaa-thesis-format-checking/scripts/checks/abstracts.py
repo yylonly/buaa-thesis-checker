@@ -26,7 +26,7 @@ def check_abstracts(content_by_page: List[Dict]) -> Dict:
     chinese_abstract_patterns = ['摘  要', '摘要', '中文摘要', '摘 要']
     english_abstract_patterns = ['Abstract', 'ABSTRACT']
     chinese_keyword_patterns = ['关键词', '关键字']
-    english_keyword_patterns = ['Keywords', 'KEYWORDS', 'Index Terms']
+    english_keyword_patterns = ['Keywords', 'KEYWORDS', 'Index Terms', 'Key words', 'KEY WORDS']
 
     abstract_section_pages = set()
     chinese_abstract_text = ""
@@ -47,6 +47,26 @@ def check_abstracts(content_by_page: List[Dict]) -> Dict:
                 result['chinese_abstract_pages'].append(content['page'])
                 break
 
+        # 如果直接匹配失败，尝试模糊匹配（处理文本提取将"摘"和"要"分开的情况）
+        if not result['chinese_abstract_found']:
+            # 检查"摘"和"要"是否同时存在
+            if '摘' in text and '要' in text:
+                # 获取两者位置
+                zu_index = text.find('摘')
+                yao_index = text.find('要')
+                # 如果"要"在"摘"之后，且距离在50字符以内，认为是摘要
+                if yao_index > zu_index and yao_index - zu_index < 50:
+                    in_chinese_abstract = True
+                    abstract_section_pages.add(content['page'])
+                    result['chinese_abstract_found'] = True
+                    result['chinese_abstract_pages'].append(content['page'])
+                # 或者上下文包含论文相关词汇
+                elif '论文' in text or '研究' in text:
+                    in_chinese_abstract = True
+                    abstract_section_pages.add(content['page'])
+                    result['chinese_abstract_found'] = True
+                    result['chinese_abstract_pages'].append(content['page'])
+
         for pattern in english_abstract_patterns:
             if pattern in text and 'Table of Contents' not in text:
                 in_english_abstract = True
@@ -60,6 +80,12 @@ def check_abstracts(content_by_page: List[Dict]) -> Dict:
                 if pattern in text:
                     result['chinese_keywords_found'] = True
                     kw_match = re.search(rf'{pattern}[:：]\s*([^\n]+)', text)
+                    if not kw_match:
+                        # 关键词可能在下一行，尝试跨行匹配
+                        kw_match = re.search(rf'{pattern}[:：]\s*\n?([^\n]+)', text)
+                    if not kw_match:
+                        # 尝试匹配"关键词"后换行，关键词在下一行开头
+                        kw_match = re.search(rf'{pattern}[:：]?\s*\n\s*([^\n]+)', text)
                     if kw_match:
                         result['chinese_keywords'] = [k.strip() for k in kw_match.group(1).split(',')]
                     break
@@ -68,9 +94,28 @@ def check_abstracts(content_by_page: List[Dict]) -> Dict:
             for pattern in english_keyword_patterns:
                 if pattern in text:
                     result['english_keywords_found'] = True
-                    kw_match = re.search(rf'{pattern}[:]\s*([^\n]+)', text)
-                    if kw_match:
-                        result['english_keywords'] = [k.strip().rstrip('.') for k in kw_match.group(1).split(',')]
+                    # 使用双换行分割关键词区域（英文Keywords通常单独成段）
+                    text_copy = text
+                    idx = text_copy.find(pattern)
+                    if idx >= 0:
+                        after_pattern = text_copy[idx:]
+                        # 按双换行分割
+                        paragraphs = after_pattern.split('\n\n')
+                        # 收集所有看起来像关键词的内容
+                        all_keywords = []
+                        for para in paragraphs:
+                            # 移除关键词前缀
+                            for p in english_keyword_patterns:
+                                para = re.sub(rf'^{re.escape(p)}[:：]\s*', '', para)
+                            para = para.strip()
+                            if para and (';' in para or ',' in para or len(para.split()) < 10):
+                                # 看起来像关键词行
+                                all_keywords.append(para)
+                        # 合并所有关键词行
+                        keywords_text = ' '.join(all_keywords)
+                        # 处理分隔符
+                        keywords_text = keywords_text.replace(';', ',')
+                        result['english_keywords'] = [k.strip().rstrip('.') for k in keywords_text.split(',') if k.strip()]
                     break
 
         if in_chinese_abstract and content['text']:

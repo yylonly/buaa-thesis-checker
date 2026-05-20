@@ -1,6 +1,6 @@
 ---
 name: buaa-thesis-checking
-description: 北航学位论文综合评审技能。用于对北京航空航天大学硕士或博士论文PDF进行“格式检查 + 内容审核 + 学术评语生成 + Markdown/HTML报告交付”的串联评审；当用户要求论文评阅意见、学术评语、论文不足与修改建议、北航论文综合检查、thesis checking、论文格式与内容同时审核、生成机器可读Markdown和给人看的图文并茂HTML时使用。该技能必须先使用 buaa-thesis-format-checking，再核对其可能的误报，随后使用 buaa-thesis-content-checking，最后生成两块核心中文评语并同时交付Markdown与HTML。
+description: 北航学位论文综合评审技能。用于对北京航空航天大学硕士、博士论文或本科毕业设计PDF进行”格式检查 + 内容审核 + 学术评语生成 + Markdown/HTML报告交付”的串联评审。当用户要求论文评阅意见、学术评语、论文不足与修改建议、北航论文综合检查、thesis checking、论文格式与内容同时审核、生成机器可读Markdown和给人看的图文并茂HTML时使用。该技能必须先使用 buaa-thesis-format-checking，再核对其可能的误报（特别是行内文字间距过大问题需人工核对），随后使用 buaa-thesis-content-checking，最后生成两块核心中文评语并同时交付Markdown与HTML。注意：行内文字间距过大/视觉空洞问题无法自动检测，格式检查后必须人工核对PDF页面。
 ---
 
 # BUAA Thesis Checking
@@ -89,6 +89,15 @@ Known false positives:
 - “攻读硕士学位期间取得的研究成果 - 无” is acceptable and should not be criticized.
 - Table pages may be left-aligned and should not be criticized solely for alignment.
 - Cover, title, authorization, declaration, abstract divider, and other front-matter pages may have naturally low text density.
+- 章节检测器可能误报：它只检测1-5章节，如果论文使用不同的章节编号系统（如引言、结论等作为首章），可能报告”缺失章节”。遇到此情况请核实目录页实际章节结构。
+- 中文摘要检测可能失败：如果PDF文本提取将”摘”和”要”分离到不同行，可能匹配失败。此时请直接查看提取文本中是否存在摘要段落。
+- 关键词检测可能失败：如果”关键词：”和实际关键词内容在不同行，可能匹配失败。
+
+IMPORTANT额外格式检查项（自动化脚本无法检测，必须人工核对）:
+
+- **行内文字间距过大/视觉空洞**: 检查正文页面是否存在行内文字间距明显不均、形成视觉空白区域的问题（表现为文字两端对齐但内部有明显缝隙）。这需要打开PDF直接查看，不能依赖文本提取。如果发现此类问题，应在修改意见中指出”正文页面存在行内文字间距不均，形成视觉空洞”。
+- **过渡段缺失（三级与四级标题之间）**: 自动化脚本仅检测二级与三级标题之间的过渡段，三级与四级之间未覆盖。
+- **图表编号格式**: 自动化脚本仅检测图表与正文的间距，不检测编号是否存在或格式是否正确。
 
 Do not include exact font,字号,line-spacing, margin, or alignment criticism unless the PDF evidence is directly checked and the problem is visible or otherwise technically confirmed.
 
