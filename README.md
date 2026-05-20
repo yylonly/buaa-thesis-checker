@@ -17,41 +17,42 @@
 
 ```text
 buaa-thesis-checker/
+├── .claude-plugin/           # Claude Code marketplace
+│   └── marketplace.json
+├── .codex-plugin/            # Codex plugin
+│   └── plugin.json
+├── .agents/                 # Agents config
+│   └── plugins/
+├── skills/                  # 所有技能
+│   ├── buaa-thesis-format-checking/
+│   │   ├── SKILL.md
+│   │   ├── README.md
+│   │   ├── references/
+│   │   └── scripts/
+│   │       ├── thesis_audit_script.py
+│   │       ├── checks/
+│   │       ├── extractors/
+│   │       └── reports/
+│   ├── buaa-thesis-content-checking/
+│   │   ├── SKILL.md
+│   │   ├── README.md
+│   │   ├── evals/
+│   │   ├── references/
+│   │   └── scripts/
+│   │       ├── check_deps.py
+│   │       ├── paper_audit_script.py
+│   │       ├── checks/
+│   │       ├── extractors/
+│   │       └── reports/
+│   ├── buaa-thesis-checking/
+│   │   ├── SKILL.md
+│   │   └── agents/openai.yaml
+│   └── cn-to-en-translator/
+│       ├── SKILL.md
+│       └── scripts/
 ├── README.md
-├── .agents/plugins/marketplace.json
-├── .claude-plugin/marketplace.json
-├── plugins/
-│   └── buaa-thesis-checker/
-│       ├── .codex-plugin/plugin.json
-│       ├── .claude-plugin/plugin.json
-│       ├── README.md
-│       └── skills/
-├── buaa-thesis-checking/
-│   ├── SKILL.md
-│   └── agents/openai.yaml
-├── buaa-thesis-format-checking/
-│   ├── SKILL.md
-│   ├── README.md
-│   ├── references/
-│   └── scripts/
-│       ├── thesis_audit_script.py
-│       ├── checks/
-│       ├── extractors/
-│       └── reports/
-├── buaa-thesis-content-checking/
-│   ├── SKILL.md
-│   ├── README.md
-│   ├── evals/
-│   ├── references/
-│   └── scripts/
-│       ├── check_deps.py
-│       ├── paper_audit_script.py
-│       ├── checks/
-│       ├── extractors/
-│       └── reports/
-└── cn-to-en-translator/
-    ├── SKILL.md
-    └── scripts/
+├── SKILL.md
+└── .gitignore
 ```
 
 ## 安装
@@ -84,38 +85,30 @@ npx skills update
 
 ### Codex Plugin
 
-Codex 插件位于：
+Codex 插件 manifest：
 
 ```text
-plugins/buaa-thesis-checker/
+.codex-plugin/plugin.json
 ```
 
-插件 manifest：
+技能目录：
 
 ```text
-plugins/buaa-thesis-checker/.codex-plugin/plugin.json
+skills/
 ```
-
-仓库内 Codex marketplace：
-
-```text
-.agents/plugins/marketplace.json
-```
-
-该 marketplace 指向本仓库的本地插件路径 `./plugins/buaa-thesis-checker`，便于在 Codex 插件 UI 或本地 marketplace 流程中发现和安装。
 
 ### Claude Code Plugin
 
-Claude Code 插件使用同一个插件目录，并额外提供 Claude Code manifest：
+Claude Code marketplace 文件：
 
 ```text
-plugins/buaa-thesis-checker/.claude-plugin/plugin.json
+.claude-plugin/marketplace.json
 ```
 
 本地开发测试：
 
 ```bash
-claude --plugin-dir ./plugins/buaa-thesis-checker
+claude --plugin-dir .
 ```
 
 通过本仓库的 Claude Code marketplace 安装：
@@ -123,12 +116,6 @@ claude --plugin-dir ./plugins/buaa-thesis-checker
 ```bash
 claude plugin marketplace add .
 claude plugin install buaa-thesis-checker@buaa-thesis-tools
-```
-
-Claude Code marketplace 文件：
-
-```text
-.claude-plugin/marketplace.json
 ```
 
 安装后技能会被命名空间化，例如：
@@ -192,16 +179,16 @@ Use $buaa-thesis-checking to review this BUAA thesis PDF and write the two requi
 完整流程：
 
 ```bash
-python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py thesis.pdf ./output --type cn
+python3 skills/buaa-thesis-format-checking/scripts/thesis_audit_script.py thesis.pdf ./output --type cn
 ```
 
 分步执行，便于复核中间产物：
 
 ```bash
-python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step1 thesis.pdf ./output
-python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step2 ./output/thesis_text_extracted.json --type cn
-python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step3-json ./output/thesis_check_results.json thesis.pdf ./output
-python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step3-html ./output/thesis_check_results.json thesis.pdf ./output
+python3 skills/buaa-thesis-format-checking/scripts/thesis_audit_script.py --step1 thesis.pdf ./output
+python3 skills/buaa-thesis-format-checking/scripts/thesis_audit_script.py --step2 ./output/thesis_text_extracted.json --type cn
+python3 skills/buaa-thesis-format-checking/scripts/thesis_audit_script.py --step3-json ./output/thesis_check_results.json thesis.pdf ./output
+python3 skills/buaa-thesis-format-checking/scripts/thesis_audit_script.py --step3-html ./output/thesis_check_results.json thesis.pdf ./output
 ```
 
 `--type` 可选值：
@@ -218,19 +205,19 @@ python3 buaa-thesis-format-checking/scripts/thesis_audit_script.py --step3-html 
 先检查依赖：
 
 ```bash
-python3 buaa-thesis-content-checking/scripts/check_deps.py --check-only
+python3 skills/buaa-thesis-content-checking/scripts/check_deps.py --check-only
 ```
 
 审核 PDF：
 
 ```bash
-python3 buaa-thesis-content-checking/scripts/paper_audit_script.py thesis.pdf ./output
+python3 skills/buaa-thesis-content-checking/scripts/paper_audit_script.py thesis.pdf ./output
 ```
 
 也可以直接审核文本：
 
 ```bash
-python3 buaa-thesis-content-checking/scripts/paper_audit_script.py --text "论文全文内容..." ./output
+python3 skills/buaa-thesis-content-checking/scripts/paper_audit_script.py --text "论文全文内容..." ./output
 ```
 
 内容审核关注：
