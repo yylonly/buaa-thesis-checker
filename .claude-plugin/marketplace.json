@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "buaa-thesis-checker",
-      "source": "./plugins/buaa-thesis-checker",
+      "source": ".",
       "description": "BUAA thesis format checking, content review, comprehensive review comments, and Chinese-to-English document translation.",
       "version": "0.1.0",
       "author": {

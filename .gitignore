@@ -2,19 +2,16 @@
 *
 
 # But track these folders and files
-!buaa-thesis-format-checking/
-!buaa-thesis-format-checking/**
-!buaa-thesis-content-checking/
-!buaa-thesis-content-checking/**
-!buaa-thesis-checking/
-!buaa-thesis-checking/**
-!cn-to-en-translator/
-!cn-to-en-translator/**
-!.agents/
-!.agents/**
+!skills/
+!skills/**
+!.codex-plugin/
+!.codex-plugin/**
 !.claude-plugin/
 !.claude-plugin/**
+!.agents/
+!.agents/**
 !README.md
+!SKILL.md
 
 # macOS metadata
 .DS_Store

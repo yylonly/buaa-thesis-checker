@@ -1,0 +1,37 @@
+{
+  "name": "buaa-thesis-checker",
+  "version": "0.1.0",
+  "description": "BUAA thesis checking and document translation skills for Claude Code.",
+  "author": {
+    "name": "yylonly",
+    "url": "https://github.com/yylonly"
+  },
+  "homepage": "https://github.com/yylonly/buaa-thesis-checker",
+  "repository": "https://github.com/yylonly/buaa-thesis-checker",
+  "license": "MIT",
+  "keywords": [
+    "buaa",
+    "thesis",
+    "format-checking",
+    "paper-review",
+    "translation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BUAA Thesis Checker",
+    "shortDescription": "BUAA thesis format checking, content review, and Chinese-to-English translation.",
+    "longDescription": "Claude Code plugin for BUAA thesis comprehensive review: format checking with 14 automated checks, content audit with LLM analysis, academic review comments generation, and Markdown/HTML report delivery.",
+    "developerName": "yylonly",
+    "category": "Productivity",
+    "capabilities": [
+      "Write",
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/yylonly/buaa-thesis-checker",
+    "defaultPrompt": [
+      "$buaa-thesis-format-checking Check the format of this thesis PDF",
+      "$buaa-thesis-checking Generate a comprehensive review for this thesis"
+    ],
+    "brandColor": "#1a365d"
+  }
+}
