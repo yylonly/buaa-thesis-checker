@@ -14,8 +14,6 @@
 !.agents/**
 !.claude-plugin/
 !.claude-plugin/**
-!plugins/
-!plugins/**
 !README.md
 
 # macOS metadata

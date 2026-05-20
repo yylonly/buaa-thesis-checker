@@ -1,4 +1,0 @@
-interface:
-  display_name: "BUAA Thesis Checking"
-  short_description: "北航论文格式与内容综合评审生成"
-  default_prompt: "Use $buaa-thesis-checking to review this BUAA thesis PDF and write the two required academic comments."
