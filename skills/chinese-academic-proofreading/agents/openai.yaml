@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chinese Academic Proofreading"
+  short_description: "中文论文校对含英文术语中文对应"
+  default_prompt: "Use $chinese-academic-proofreading to proofread this Chinese academic paper for typos, colloquial wording, promotional claims, English terms without Chinese counterparts, and scholarly expression, then generate Markdown and HTML reports."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ICSE SEET Review"
+  short_description: "SEET标准评审教育论文并分章给建议"
+  default_prompt: "Use $icse-seet-review to evaluate this software engineering education paper against ICSE SEET criteria, split weaknesses and revision advice, and generate Markdown plus HTML review reports."
